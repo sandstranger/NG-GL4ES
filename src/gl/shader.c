@@ -672,10 +672,10 @@ void APIENTRY_GL4ES gl4es_glShaderSource(GLuint shader, GLsizei count, const GLc
                 glshader->source = replace_version_line(glshader->source);
                 glsl_version = 460;
             }
-            if (glsl_version < 150 || globals4es.esversion < 300) {
+            if (glsl_version < 140 || globals4es.esversion < 300) {
                 glshader->converted = strdup(ConvertShaderConditionally(glshader));
-				add_marker(&glshader->converted);
-                num_add_f(&glshader->converted);
+				// add_marker(&glshader->converted);
+                // num_add_f(&glshader->converted);
                 glshader->is_converted_essl_320 = 0;
             } else {
                 if (check_version_compatibility(glshader->source)) {
