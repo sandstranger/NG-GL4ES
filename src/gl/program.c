@@ -552,7 +552,7 @@ void APIENTRY_GL4ES gl4es_glGetProgramiv(GLuint program, GLenum pname, GLint* pa
     case GL_ACTIVE_ATTRIBUTE_MAX_LENGTH:
         if (gles_glGetProgramiv) {
             gles_glGetProgramiv(glprogram->id, pname, params);
-            //errorGL();
+            errorGL();
         } else
             *params = 0;
         break;
@@ -576,7 +576,7 @@ void APIENTRY_GL4ES gl4es_glGetProgramiv(GLuint program, GLenum pname, GLint* pa
     default:
         if (gles_glGetProgramiv) {
             gles_glGetProgramiv(glprogram->id, pname, params);
-            //errorGL();
+            errorGL();
         } else
             errorShim(GL_INVALID_ENUM);
         break;
