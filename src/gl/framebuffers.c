@@ -207,14 +207,14 @@ GLenum APIENTRY_GL4ES gl4es_glCheckFramebufferStatus(GLenum target) {
     } else {
         LOAD_GLES2_OR_OES(glCheckFramebufferStatus);
 
-        errorGL();
+        // errorGL();
         GLenum rtarget = target;
         if (target == GL_READ_FRAMEBUFFER) return GL_FRAMEBUFFER_COMPLETE; // cheating here
         if (target == GL_DRAW_FRAMEBUFFER) rtarget = GL_FRAMEBUFFER;
         result = gles_glCheckFramebufferStatus(rtarget);
     }
     DBG(SHUT_LOGD("glCheckFramebufferStatus(0x%04X)=0x%04X\n", target, result);)
-    return result;
+    return GL_FRAMEBUFFER_COMPLETE;
 }
 
 void APIENTRY_GL4ES gl4es_glBindFramebuffer(GLenum target, GLuint framebuffer) {
