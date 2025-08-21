@@ -528,7 +528,7 @@ void APIENTRY_GL4ES gl4es_glGetProgramiv(GLuint program, GLenum pname, GLint* pa
     case GL_DELETE_STATUS:
         if (gles_glGetProgramiv) {
             gles_glGetProgramiv(glprogram->id, pname, params);
-            // errorGL();
+            errorGL();
         } else
             *params = GL_FALSE;
         break;
@@ -536,12 +536,12 @@ void APIENTRY_GL4ES gl4es_glGetProgramiv(GLuint program, GLenum pname, GLint* pa
         *params = glprogram->linked ? GL_TRUE : GL_FALSE;
         break;
     case GL_VALIDATE_STATUS:
-        *params = GL_TRUE;/*glprogram->valid_result;*/
+        *params = glprogram->valid_result;
         break;
     case GL_INFO_LOG_LENGTH:
         if (gles_glGetProgramiv) {
             gles_glGetProgramiv(glprogram->id, pname, params);
-            // errorGL();
+            errorGL();
         } else
             *params = strlen(getFakeProgramInfo(glprogram));
         break;
