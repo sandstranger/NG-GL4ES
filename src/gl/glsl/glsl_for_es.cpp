@@ -1257,22 +1257,22 @@ std::string preprocess_glsl(const std::string& glsl, GLenum shaderType, bool* at
                 "const mat3 rotInverse = mat3(rot[0][0], rot[1][0], rot[2][0], rot[0][1], rot[1][1], rot[2][1], "
                 "rot[0][2], rot[1][2], rot[2][2]);");
 
-	replace_all(ret, "texture2D", "texture");
+	// replace_all(ret, "texture2D", "texture");
     replace_all(ret, "vec3 worldPosDiff", "vec4 worldPosDiff");
     replace_all(ret, "vec3[3](vWorldPos[0] - vWorldPos[1]", "vec4[3](vWorldPos[0] - vWorldPos[1]");
     replace_all(ret, "vec3 reflection;", "vec3 reflection=vec3(0,0,0);");
-    replace_all(ret, "writeonly uniform image2D colorimg4;", "layout (rgba16f) writeonly uniform image2D colorimg4;");
+    // replace_all(ret, "writeonly uniform image2D colorimg4;", "layout (rgba16f) writeonly uniform image2D colorimg4;");
     replace_all(ret, "#error ", "// #error ");
 
     //replace_all(ret, "r11f_g11f_b10f", "r32f"); //no good.
 
     // Replace deprecated syntax
-    if (shaderType == GL_VERTEX_SHADER) {
+    /*if (shaderType == GL_VERTEX_SHADER) {
         replace_all(ret, "attribute", "in");
         replace_all(ret, "varying", "out");
     } else if (shaderType == GL_FRAGMENT_SHADER) {
         replace_all(ret, "varying", "in");
-	}
+	}*/
 
     // GI_TemporalFilter injection
     inject_temporal_filter(ret);
@@ -1286,7 +1286,7 @@ std::string preprocess_glsl(const std::string& glsl, GLenum shaderType, bool* at
   
     inject_gl_DepthRange(ret);
 
-    inject_image2D_declarations(ret);
+    // inject_image2D_declarations(ret);
 
     inject_shaderDrawParameters(ret);
 
@@ -1299,7 +1299,7 @@ std::string preprocess_glsl(const std::string& glsl, GLenum shaderType, bool* at
         process_sampler_buffer(ret);
     }
 
-	replace_all(ret, "#version 100", "#version 330");
+	/*replace_all(ret, "#version 100", "#version 330");
     replace_all(ret, "#version 110", "#version 330");
     replace_all(ret, "#version 120", "#version 330");
     replace_all(ret, "#version 130", "#version 330");
@@ -1307,7 +1307,7 @@ std::string preprocess_glsl(const std::string& glsl, GLenum shaderType, bool* at
     replace_all(ret, "#version 150", "#version 330");
     replace_all(ret, "#version 300", "#version 330");
     replace_all(ret, "#version 310", "#version 330");
-    replace_all(ret, "#version 320", "#version 330");
+    replace_all(ret, "#version 320", "#version 330");*/
 
     *atomicCounterEmulated = process_non_opaque_atomic_to_ssbo(ret);
     return ret;
@@ -1316,13 +1316,13 @@ std::string preprocess_glsl(const std::string& glsl, GLenum shaderType, bool* at
 int get_or_add_glsl_version(std::string& glsl) {
     int glsl_version = getGLSLVersion(glsl.c_str());
     if (glsl_version == -1) {
-        glsl_version = 330;
-        glsl.insert(0, "#version 330\n");
-    } else if (glsl_version < 330) {
+        glsl_version = 140;
+        glsl.insert(0, "#version 140\n");
+    }/* else if (glsl_version < 330) {
         // force upgrade glsl version
         glsl = replace_line_starting_with(glsl, "#version", "#version 330\n");
         glsl_version = 330;
-    }
+    }*/
     //LOG_D("GLSL version: %d",glsl_version)
     return glsl_version;
 }
