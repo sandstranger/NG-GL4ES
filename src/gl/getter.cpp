@@ -637,13 +637,13 @@ extern "C"
             break;
         case GL_MAX_COLOR_ATTACHMENTS:
             if (hardext.fbo)
-                *params = 8;
+                *params = hardext.maxcolorattach;
             else
                 *params = 0;
             break;
         case GL_MAX_DRAW_BUFFERS_ARB:
             if (hardext.fbo)
-                *params = 8;
+                *params = hardext.maxdrawbuffers;
             else
                 *params = 0;
             break;
