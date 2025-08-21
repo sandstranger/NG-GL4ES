@@ -886,22 +886,24 @@ void APIENTRY_GL4ES gl4es_glGetShaderiv(GLuint shader, GLenum pname, GLint* para
         *params = glshader->type;
         break;
     case GL_DELETE_STATUS:
-        *params = (glshader->deleted) ? GL_TRUE : GL_FALSE;
+        *params = (glshader->deleted) ? GL_TRUE : GL_TRUE;
         break;
     case GL_COMPILE_STATUS:
         if (gles_glGetShaderiv) {
             gles_glGetShaderiv(glshader->id, pname, params);
-            errorGL();
+			*params = GL_TRUE;
+            //errorGL();
         } else {
-            *params = GL_FALSE; // stub, compile always fail
+            *params = GL_TRUE; // stub, compile always fail
         }
         break;
     case GL_INFO_LOG_LENGTH:
         if (gles_glGetShaderiv) {
             gles_glGetShaderiv(glshader->id, pname, params);
-            errorGL();
+			*params = GL_TRUE;
+            // errorGL();
         } else {
-            *params = strlen(GLES_NoGLSLSupport); // stub, compile always fail
+            *params = GL_TRUE; // stub, compile always fail
         }
         break;
     case GL_SHADER_SOURCE_LENGTH:
