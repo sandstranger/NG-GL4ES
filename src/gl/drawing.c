@@ -951,9 +951,9 @@ static void (*internal_glDrawElementsBaseVertex)(GLenum mode, GLsizei count, GLe
 
 void internal_glDrawElementsBaseVertex_gles30(GLenum mode, GLsizei count, GLenum type, const void* indices,
                                               GLint basevertex) {
-    DBG(SHUT_LOGD("internal_glDrawElementsBaseVertex_gles30(%s, %p, %s, @%p, %d, @%p), inlist=%i, pending=%d\n",
-                  PrintEnum(mode), counts, PrintEnum(type), indices, primcount, basevertex,
-                  (glstate->list.active) ? 1 : 0, glstate->list.pending);)
+    DBG(SHUT_LOGD("internal_glDrawElementsBaseVertex_gles30(%s, %d, %s, %p, %d), inlist=%i, pending=%d\n",
+                  PrintEnum(mode), count, PrintEnum(type), indices, basevertex, (glstate->list.active) ? 1 : 0,
+                  glstate->list.pending);)
     bool compiling = (glstate->list.active);
     bool intercept = should_intercept_render(mode);
     // BATCH Mode
@@ -1057,8 +1057,9 @@ void internal_glDrawElementsBaseVertex_gles30(GLenum mode, GLsizei count, GLenum
 
 void internal_glDrawElementsBaseVertex_gles32(GLenum mode, GLsizei count, GLenum type, const void* indices,
                                               GLint basevertex) {
-    DBG(SHUT_LOGD("internal_glDrawElementsBaseVertex_gles32(%s, %p, %s, @%p, %d, @%p)", PrintEnum(mode), counts,
-                  PrintEnum(type), indices, primcount, basevertex;))
+    DBG(SHUT_LOGD("internal_glDrawElementsBaseVertex_gles30(%s, %d, %s, %p, %d), inlist=%i, pending=%d\n",
+                  PrintEnum(mode), count, PrintEnum(type), indices, basevertex, (glstate->list.active) ? 1 : 0,
+                  glstate->list.pending);)
     LOAD_GLES3_OR_EXT(glDrawElementsBaseVertex);
     gles_glDrawElementsBaseVertex(mode, count, type, indices, basevertex);
 }

@@ -2,7 +2,7 @@
 #define _GL4ES_VERSION_H
 
 #define MAJOR 0
-#define MINOR 3
+#define MINOR 4
 #define REVISION 0
 #define VERSION_TYPE "Release "
 #define VERSION_SUFFIX ""

@@ -1344,10 +1344,16 @@ void APIENTRY_GL4ES gl4es_glTexImage2D(GLenum target, GLint level, GLint interna
             glstate->texture.bound[glstate->texture.active][what_target(target)]->texture,
             glstate->texture.bound[glstate->texture.active][what_target(target)]->streamed, glstate->list.compiling);)
 
-    // fuck weird depth handling!!!
+    // pre-format handling
     if (format == GL_DEPTH_COMPONENT) {
         internalformat = GL_DEPTH_COMPONENT;
         type = GL_UNSIGNED_INT;
+    }
+    if (internalformat == GL_RGBA16) {
+        internalformat = GL_RGBA16F;
+        type = GL_FLOAT;
+    } else if (internalformat == GL_RGBA16_SNORM) {
+        internalformat = GL_RGBA;
     }
 
     internal_convert(&internalformat, &type, &format);
@@ -1736,10 +1742,21 @@ void APIENTRY_GL4ES gl4es_glTexImage2D(GLenum target, GLint level, GLint interna
             internalformat != GL_RGB10_A2)
             swizzle_texture(width, height, &format, &type, internalformat, new_format, NULL,
                             bound); // convert format even if data is NULL
-        if (internalformat == GL_R11F_G11F_B10F || internalformat == GL_R32F) type = GL_FLOAT;
+        if (internalformat == GL_R11F_G11F_B10F || internalformat == GL_R32F) {
+            type = GL_FLOAT;
+            if (format == GL_BGRA) format = GL_RGB;
+        }
         if (internalformat == GL_RGB10_A2) {
             if (format == GL_BGRA) format = GL_RGBA;
             type = GL_UNSIGNED_INT_2_10_10_10_REV;
+        }
+        if (internalformat == GL_RGB8 && format == GL_RGBA) {
+            internalformat = GL_RGBA8;
+            format = GL_RGBA;
+            type = GL_UNSIGNED_BYTE;
+        }
+        if (type == GL_HALF_FLOAT_OES) {
+            type = GL_HALF_FLOAT;
         }
         if (bound->shrink != 0) {
             switch (globals4es.texshrink) {

@@ -1576,6 +1576,46 @@ void gl4es_setCurrentFBO() {
                            (glstate->fbo.current_fb->id) ? glstate->fbo.current_fb->id : glstate->fbo.mainfbo_fbo);
 }
 
+void APIENTRY_GL4ES gl4es_glDrawBuffer(GLenum buffer) {
+    DBG(SHUT_LOGD("glDrawBuffer, %s", PrintEnum(buffer));)
+    LOAD_GLES(glGetIntegerv)
+    LOAD_GLES3(glDrawBuffers)
+
+    GLint currentFBO;
+    gles_glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &currentFBO);
+
+    if (currentFBO == 0) {
+        GLenum buffers[1] = {GL_NONE};
+        switch (buffer) {
+        case GL_FRONT:
+        case GL_BACK:
+        case GL_NONE:
+            buffers[0] = buffer;
+            gles_glDrawBuffers(1, buffers);
+            break;
+        default:
+            break;
+        }
+    } else {
+        GLint maxAttachments;
+        gles_glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &maxAttachments);
+
+        if (buffer == GL_NONE) {
+            GLenum* buffers = (GLenum*)alloca(maxAttachments * sizeof(GLenum));
+            for (int i = 0; i < maxAttachments; i++) {
+                buffers[i] = GL_NONE;
+            }
+            gles_glDrawBuffers(maxAttachments, buffers);
+        } else if (buffer >= GL_COLOR_ATTACHMENT0 && buffer < GL_COLOR_ATTACHMENT0 + maxAttachments) {
+            GLenum* buffers = (GLenum*)alloca(maxAttachments * sizeof(GLenum));
+            for (int i = 0; i < maxAttachments; i++) {
+                buffers[i] = (i == (buffer - GL_COLOR_ATTACHMENT0)) ? buffer : GL_NONE;
+            }
+            gles_glDrawBuffers(maxAttachments, buffers);
+        }
+    }
+}
+
 // DrawBuffers functions are faked unless GL_EXT_draw_buffers is supported
 void APIENTRY_GL4ES gl4es_glDrawBuffers(GLsizei n, const GLenum* bufs) {
     DBG(SHUT_LOGD("glDrawBuffers(%d, %p) [0]=%s\n", n, bufs, n ? PrintEnum(bufs[0]) : "nil");)
@@ -1869,6 +1909,8 @@ AliasExport(void, glRenderbufferStorageMultisample, ,
             (GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height));
 
 // DrawBuffers
+AliasExport(void, glDrawBuffer, , (GLenum bufs));
+AliasExport(void, glDrawBuffer, ARB, (GLenum bufs));
 AliasExport(void, glDrawBuffers, , (GLsizei n, const GLenum* bufs));
 AliasExport(void, glDrawBuffers, ARB, (GLsizei n, const GLenum* bufs));
 AliasExport(void, glNamedFramebufferDrawBuffers, , (GLuint framebuffer, GLsizei n, const GLenum* bufs));
