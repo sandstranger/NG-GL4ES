@@ -891,15 +891,15 @@ void APIENTRY_GL4ES gl4es_glGetShaderiv(GLuint shader, GLenum pname, GLint* para
     case GL_COMPILE_STATUS:
         if (gles_glGetShaderiv) {
             gles_glGetShaderiv(glshader->id, pname, params);
-            //errorGL();
+            errorGL();
         } else {
-            *params = GL_TRUE; // stub, compile always fail
+            *params = GL_FALSE; // stub, compile always fail
         }
         break;
     case GL_INFO_LOG_LENGTH:
         if (gles_glGetShaderiv) {
             gles_glGetShaderiv(glshader->id, pname, params);
-            // errorGL();
+            errorGL();
         } else {
             *params = strlen(GLES_NoGLSLSupport); // stub, compile always fail
         }
