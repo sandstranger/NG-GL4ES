@@ -900,7 +900,6 @@ void APIENTRY_GL4ES gl4es_glGetShaderiv(GLuint shader, GLenum pname, GLint* para
     case GL_INFO_LOG_LENGTH:
         if (gles_glGetShaderiv) {
             gles_glGetShaderiv(glshader->id, pname, params);
-			*params = GL_TRUE;
             // errorGL();
         } else {
             *params = GL_TRUE; // stub, compile always fail
