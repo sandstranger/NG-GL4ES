@@ -530,10 +530,10 @@ void APIENTRY_GL4ES gl4es_glGetProgramiv(GLuint program, GLenum pname, GLint* pa
             gles_glGetProgramiv(glprogram->id, pname, params);
             // errorGL();
         } else
-            *params = GL_TRUE;
+            *params = GL_FALSE;
         break;
     case GL_LINK_STATUS:
-        *params = glprogram->linked ? GL_TRUE : GL_TRUE;
+        *params = glprogram->linked ? GL_TRUE : GL_FALSE;
         break;
     case GL_VALIDATE_STATUS:
         *params = GL_TRUE;/*glprogram->valid_result;*/
