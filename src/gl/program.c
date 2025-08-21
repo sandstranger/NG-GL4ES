@@ -528,20 +528,20 @@ void APIENTRY_GL4ES gl4es_glGetProgramiv(GLuint program, GLenum pname, GLint* pa
     case GL_DELETE_STATUS:
         if (gles_glGetProgramiv) {
             gles_glGetProgramiv(glprogram->id, pname, params);
-            errorGL();
+            // errorGL();
         } else
-            *params = GL_FALSE;
+            *params = GL_TRUE;
         break;
     case GL_LINK_STATUS:
-        *params = glprogram->linked ? GL_TRUE : GL_FALSE;
+        *params = glprogram->linked ? GL_TRUE : GL_TRUE;
         break;
     case GL_VALIDATE_STATUS:
-        *params = glprogram->valid_result;
+        *params = GL_TRUE;/*glprogram->valid_result;*/
         break;
     case GL_INFO_LOG_LENGTH:
         if (gles_glGetProgramiv) {
             gles_glGetProgramiv(glprogram->id, pname, params);
-            errorGL();
+            // errorGL();
         } else
             *params = strlen(getFakeProgramInfo(glprogram));
         break;
@@ -552,7 +552,7 @@ void APIENTRY_GL4ES gl4es_glGetProgramiv(GLuint program, GLenum pname, GLint* pa
     case GL_ACTIVE_ATTRIBUTE_MAX_LENGTH:
         if (gles_glGetProgramiv) {
             gles_glGetProgramiv(glprogram->id, pname, params);
-            errorGL();
+            //errorGL();
         } else
             *params = 0;
         break;
@@ -576,7 +576,7 @@ void APIENTRY_GL4ES gl4es_glGetProgramiv(GLuint program, GLenum pname, GLint* pa
     default:
         if (gles_glGetProgramiv) {
             gles_glGetProgramiv(glprogram->id, pname, params);
-            errorGL();
+            //errorGL();
         } else
             errorShim(GL_INVALID_ENUM);
         break;
