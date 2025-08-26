@@ -1,9 +1,7 @@
 #include "texture.h"
 
-#include <GL/gl.h>
 #include "../glx/hardext.h"
 #include "../glx/streaming.h"
-#include "GL/glext.h"
 #include "array.h"
 #include "blit.h"
 #include "decompress.h"
@@ -306,7 +304,6 @@ void internal_convert(GLenum* internal_format, GLenum* type, GLenum* format) {
 }
 
 void internal2format_type(GLenum* internalformat, GLenum* format, GLenum* type) {
-    if (format && *format != GL_BGRA && *format != GL_BGR && *format != GL_BGRA8_EXT) return;
     DBG(char log_buffer[512]; int offset = snprintf(log_buffer, sizeof(log_buffer), "tex format converting... ");
         if (internalformat) offset +=
         snprintf(log_buffer + offset, sizeof(log_buffer) - offset, "internalFormat: %s", PrintEnum(*internalformat));
@@ -315,173 +312,16 @@ void internal2format_type(GLenum* internalformat, GLenum* format, GLenum* type) 
         if (type) offset += snprintf(log_buffer + offset, sizeof(log_buffer) - offset, ", type: %s", PrintEnum(*type));
         snprintf(log_buffer + offset, sizeof(log_buffer) - offset, "\n"); DBGLOGD("%s", log_buffer))
     switch (*internalformat) {
-
-    case GL_RGB10_A2:
-        if (type) *type = GL_UNSIGNED_INT_2_10_10_10_REV;
-        break;
-    case GL_RGB5_A1:
-        if (type) *type = GL_UNSIGNED_SHORT_5_5_5_1;
-        break;
-    case GL_SRGB8:
-        if (type) *type = GL_UNSIGNED_BYTE;
-        break;
-    case GL_RGBA32F:
-    case GL_RGB32F:
-        if (type) *type = GL_FLOAT;
-        break;
-    case GL_RGB9_E5:
-        if (type) *type = GL_UNSIGNED_INT_5_9_9_9_REV;
-        break;
-    case GL_R11F_G11F_B10F:
-        if (type) *type = GL_UNSIGNED_INT_10F_11F_11F_REV;
-        if (format) *format = GL_RGB;
-        break;
-    case GL_RGBA32UI:
-    case GL_RGB32UI:
-        if (type) *type = GL_UNSIGNED_INT;
-        break;
-    case GL_RGBA32I:
-    case GL_RGB32I:
-        if (type) *type = GL_INT;
-        break;
-    case GL_RGBA16: {
-        *internalformat = GL_RGBA16F;
-        if (type) *type = GL_FLOAT;
-        break;
-    }
-    case GL_RGBA8:
-    case GL_RGBA:
-        if (type) *type = GL_UNSIGNED_BYTE;
-        if (format) *format = GL_RGBA;
-        break;
-    case GL_RGBA16F:
-        if (type) *type = GL_HALF_FLOAT;
-        break;
-    case GL_R16:
-        *internalformat = GL_R16F;
-        if (type) *type = GL_FLOAT;
-        break;
-    case GL_RGB16:
-        *internalformat = GL_RGB16F;
-        if (type) *type = GL_HALF_FLOAT;
-        if (format) *format = GL_RGB;
-        break;
-    case GL_RGB16F:
-        if (type) *type = GL_HALF_FLOAT;
-        if (format) *format = GL_RGB;
-        break;
-    case GL_RG16:
-        *internalformat = GL_RG16F;
-        if (type) *type = GL_HALF_FLOAT;
-        if (format) *format = GL_RG;
-        break;
-        // Inline R and RG channel mappings
-    case GL_R8:
-        if (format) *format = GL_RED;
-        if (type) *type = GL_UNSIGNED_BYTE;
-        break;
-    case GL_R8_SNORM:
-        if (format) *format = GL_RED;
-        if (type) *type = GL_BYTE;
-        break;
-    case GL_R16F:
-        if (format) *format = GL_RED;
-        if (type) *type = GL_HALF_FLOAT;
-        break;
     case GL_RED:
-        if (type) {
-            switch (*type) {
-            case GL_UNSIGNED_BYTE:
-                *internalformat = GL_R8;
-                if (format) *format = GL_RED;
-                break;
-            case GL_BYTE:
-                *internalformat = GL_R8_SNORM;
-                if (format) *format = GL_RED;
-                break;
-            case GL_HALF_FLOAT:
-                *internalformat = GL_R16F;
-                if (format) *format = GL_RED;
-                break;
-            case GL_FLOAT:
-                *internalformat = GL_R32F;
-                if (format) *format = GL_RED;
-                break;
-            default:
-                if (type) *type = GL_UNSIGNED_BYTE; // Fallback to unsigned byte
-                *internalformat = GL_R8;            // Fallback to R8
-                if (format) *format = GL_RED;
-                break;
-            }
-        }
-        break;
-    case GL_R8UI:
-        if (format) *format = GL_RED_INTEGER;
-        if (type) *type = GL_UNSIGNED_BYTE;
-        break;
-    case GL_R8I:
-        if (format) *format = GL_RED_INTEGER;
-        if (type) *type = GL_BYTE;
-        break;
-    case GL_R16UI:
-        if (format) *format = GL_RED_INTEGER;
-        if (type) *type = GL_UNSIGNED_SHORT;
-        break;
-    case GL_R16I:
-        if (format) *format = GL_RED_INTEGER;
-        if (type) *type = GL_SHORT;
-        break;
-    case GL_R32UI:
-        if (format) *format = GL_RED_INTEGER;
-        if (type) *type = GL_UNSIGNED_INT;
-        break;
-    case GL_R32I:
-        if (format) *format = GL_RED_INTEGER;
-        if (type) *type = GL_INT;
-        break;
-    case GL_RG8:
-        if (format) *format = GL_RG;
-        if (type) *type = GL_UNSIGNED_BYTE;
-        break;
-    case GL_RG8_SNORM:
-        if (format) *format = GL_RG;
-        if (type) *type = GL_BYTE;
-        break;
-    case GL_RG16F:
-        if (format) *format = GL_RG;
-        if (type) *type = GL_HALF_FLOAT;
-        break;
-    case GL_RG32F:
-        if (format) *format = GL_RG;
-        if (type) *type = GL_FLOAT;
-        break;
-    case GL_RG8UI:
-        if (format) *format = GL_RG_INTEGER;
-        if (type) *type = GL_UNSIGNED_BYTE;
-        break;
-    case GL_RG8I:
-        if (format) *format = GL_RG_INTEGER;
-        if (type) *type = GL_BYTE;
-        break;
-    case GL_RG16UI:
-        if (format) *format = GL_RG_INTEGER;
-        if (type) *type = GL_UNSIGNED_SHORT;
-        break;
-    case GL_RG16I:
-        if (format) *format = GL_RG_INTEGER;
-        if (type) *type = GL_SHORT;
-        break;
-    case GL_RG32UI:
-        if (format) *format = GL_RG_INTEGER;
-        if (type) *type = GL_UNSIGNED_INT;
-        break;
-    case GL_RG32I:
-        if (format) *format = GL_RG_INTEGER;
-        if (type) *type = GL_INT;
-        break;
+    case GL_R8:
     case GL_R:
-        if (format) *format = GL_RED;
-        if (type) *type = GL_UNSIGNED_BYTE;
+        if (!hardext.rgtex) {
+            *format = GL_RGB;
+            *type = GL_UNSIGNED_BYTE;
+        } else {
+            *format = GL_RED;
+            *type = GL_UNSIGNED_BYTE;
+        }
         break;
     case GL_RG:
         if (!hardext.rgtex) {
@@ -527,9 +367,17 @@ void internal2format_type(GLenum* internalformat, GLenum* format, GLenum* type) 
             *format = GL_RGB;
         *type = GL_UNSIGNED_BYTE;
         break;
+    case GL_RGB5_A1:
+        *format = GL_RGBA;
+        *type = GL_UNSIGNED_SHORT_5_5_5_1;
+        break;
     case GL_RGBA4:
         *format = GL_RGBA;
         *type = GL_UNSIGNED_SHORT_4_4_4_4;
+        break;
+    case GL_RGBA:
+        *format = GL_RGBA;
+        *type = GL_UNSIGNED_BYTE;
         break;
     case GL_BGRA:
         if (hardext.bgra8888)
@@ -563,14 +411,26 @@ void internal2format_type(GLenum* internalformat, GLenum* format, GLenum* type) 
         *format = GL_DEPTH_STENCIL;
         *type = GL_UNSIGNED_INT_24_8;
         break;
+    case GL_RGBA16F:
+        *format = GL_RGBA;
+        *type = (hardext.halffloattex) ? GL_HALF_FLOAT_OES : GL_UNSIGNED_BYTE;
+        break;
+    case GL_RGBA32F:
+        *format = GL_RGBA;
+        *type = (hardext.floattex) ? GL_FLOAT : GL_UNSIGNED_BYTE;
+        break;
+    case GL_RGB16F:
+        *format = GL_RGB;
+        *type = (hardext.halffloattex) ? GL_HALF_FLOAT_OES : GL_UNSIGNED_BYTE;
+        break;
+    case GL_RGB32F:
+        *format = GL_RGB;
+        *type = (hardext.floattex) ? GL_FLOAT : GL_UNSIGNED_BYTE;
+        break;
     default:
-        // fallback handling for GL_RGB8, GL_RGBA16_SNORM etc.
-        if (*internalformat == GL_RGB8) {
-            if (type && *type != GL_UNSIGNED_BYTE) *type = GL_UNSIGNED_BYTE;
-            if (format) *format = GL_RGB;
-        } else if (*internalformat == GL_RGBA16_SNORM) {
-            if (type && *type != GL_SHORT) *type = GL_SHORT;
-        }
+        DBG(SHUT_LOGE("LIBGL: Warning, unknown Internalformat (%s)\n", PrintEnum(*internalformat)));
+        *format = GL_RGBA;
+        *type = GL_UNSIGNED_BYTE;
         break;
     }
     DBG(char log_buffer2[512]; int offset2 = snprintf(log_buffer, sizeof(log_buffer), "converted: ");
@@ -606,19 +466,25 @@ static void* swizzle_texture(GLsizei width, GLsizei height, GLenum* format, GLen
     //     internal2format_type(&intermediaryformat, &dest_format, &dest_type);
     //     convert = 1;
     //     check = 0;
-    // } else
+    // }
 
-    {
+    else {
         if ((*type) == GL_HALF_FLOAT) (*type) = GL_HALF_FLOAT_OES; // the define is different between GL and GLES...
         switch (*format) {
         case GL_R:
         case GL_RED:
-            dest_format = GL_RED;
-            check = 0;
+            if (!hardext.rgtex) {
+                dest_format = GL_RGB;
+                convert = 1;
+            } else
+                dest_format = GL_RED;
             break;
         case GL_RG:
-            dest_format = GL_RG;
-            check = 0;
+            if (!hardext.rgtex) {
+                dest_format = GL_RGB;
+                convert = 1;
+            } else
+                dest_format = GL_RG;
             break;
         case GL_COMPRESSED_LUMINANCE:
             *format = GL_LUMINANCE;
@@ -641,7 +507,6 @@ static void* swizzle_texture(GLsizei width, GLsizei height, GLenum* format, GLen
             break;
         case GL_RGB:
             dest_format = GL_RGB;
-            check = 0;
             break;
         case GL_COMPRESSED_ALPHA:
             *format = GL_ALPHA;
@@ -663,7 +528,6 @@ static void* swizzle_texture(GLsizei width, GLsizei height, GLenum* format, GLen
             }
             break;
         case GL_RGBA:
-            check = 0;
             break;
         case GL_LUMINANCE8_ALPHA8:
         case GL_COMPRESSED_LUMINANCE_ALPHA:
@@ -701,23 +565,26 @@ static void* swizzle_texture(GLsizei width, GLsizei height, GLenum* format, GLen
             }
             break;
             // vvvvv all this are internal formats, so it should not happens
-        case GL_RGB565:
-            check = 0;
-            break;
         case GL_RGB5:
+        case GL_RGB565:
             dest_format = GL_RGB;
             dest_type = GL_UNSIGNED_SHORT_5_6_5;
             convert = 1;
             check = 0;
             break;
         case GL_RGB8:
-            check = 0;
+            dest_format = GL_RGB;
+            *format = GL_RGB;
             break;
         case GL_RGBA4:
+            dest_format = GL_RGBA;
+            dest_type = GL_UNSIGNED_SHORT_4_4_4_4;
+            *format = GL_RGBA;
             check = 0;
             break;
         case GL_RGBA8:
-            check = 0;
+            dest_format = GL_RGBA;
+            *format = GL_RGBA;
             break;
         case GL_BGRA:
             if (bgra_ok) {
@@ -744,7 +611,6 @@ static void* swizzle_texture(GLsizei width, GLsizei height, GLenum* format, GLen
             // else convert = 1;
             break;
         case GL_DEPTH_COMPONENT:
-            check = 0;
             // if (hardext.depthtex) {
             *format = dest_format = GL_DEPTH_COMPONENT;
             // if (dest_type != GL_UNSIGNED_INT) {
@@ -777,15 +643,13 @@ static void* swizzle_texture(GLsizei width, GLsizei height, GLenum* format, GLen
             dest_type = GL_FLOAT;
             break;
         case GL_STENCIL_INDEX8:
-            check = 0;
             if (hardext.stenciltex)
                 *format = dest_format = GL_STENCIL_INDEX8;
             else
                 convert = 1;
             break;
         default:
-            check = 0;
-            // convert = 1;
+            convert = 1;
             break;
         }
         if (check) switch (*type) {
@@ -957,7 +821,11 @@ GLenum swizzle_internalformat(GLenum* internalformat, GLenum format, GLenum type
     case GL_RED:
     case GL_R:
     case GL_R8:
-        sret = GL_RED;
+        if (!hardext.rgtex) {
+            ret = GL_RGB;
+            sret = GL_RGB;
+        } else
+            sret = GL_RED;
         break;
     case GL_R32F:
         ret = sret = GL_R32F;
@@ -966,7 +834,11 @@ GLenum swizzle_internalformat(GLenum* internalformat, GLenum format, GLenum type
         ret = sret = GL_RGB10_A2;
         break;
     case GL_RG:
-        sret = GL_RG;
+        if (!hardext.rgtex) {
+            ret = GL_RGB;
+            sret = GL_RGB;
+        } else
+            sret = GL_RG;
         break;
     case GL_RGB565:
         ret = GL_RGB5;
@@ -979,11 +851,10 @@ GLenum swizzle_internalformat(GLenum* internalformat, GLenum format, GLenum type
             break;
         }
     case GL_RGB8:
+    case GL_BGR:
     case GL_RGB16:
     case GL_RGB16F:
     case GL_RGB32F:
-        break;
-    case GL_BGR:
     case 3:
         ret = GL_RGB;
         sret = GL_RGB;
@@ -1010,7 +881,6 @@ GLenum swizzle_internalformat(GLenum* internalformat, GLenum format, GLenum type
     case GL_RGBA16:
     case GL_RGBA16F:
     case GL_RGBA32F:
-        break;
     case 4:
         if (format == GL_BGRA && bgra_ok) {
             ret = GL_BGRA;
@@ -1369,14 +1239,6 @@ void APIENTRY_GL4ES gl4es_glTexImage2D(GLenum target, GLint level, GLint interna
         internalformat = GL_DEPTH_COMPONENT;
         type = GL_UNSIGNED_INT;
     }
-    if (internalformat == GL_RGBA16) {
-        internalformat = GL_RGBA16F;
-        type = GL_FLOAT;
-    } else if (internalformat == GL_RGBA16_SNORM) {
-        internalformat = GL_RGBA;
-    }
-
-    internal_convert(&internalformat, &type, &format);
 
     if (data == NULL && (internalformat == GL_RGB16F || internalformat == GL_RGBA16F))
         internal2format_type(&internalformat, &format, &type);
@@ -1586,7 +1448,7 @@ void APIENTRY_GL4ES gl4es_glTexImage2D(GLenum target, GLint level, GLint interna
             }
         }
     }
-    // if (level > 0 && (bound->npot && globals4es.forcenpot)) return; // no mipmap...
+    if (level > 0 && (bound->npot && globals4es.forcenpot)) return; // no mipmap...
     if (level == 0 || !bound->valid) {
         bound->wanted_internal = internalformat; // save it before transformation
     }
@@ -1604,7 +1466,7 @@ void APIENTRY_GL4ES gl4es_glTexImage2D(GLenum target, GLint level, GLint interna
     else
         shrink = bound->shrink;
 
-    // if (((width >> shrink) == 0) && ((height >> shrink) == 0)) return; // nothing to do
+    if (((width >> shrink) == 0) && ((height >> shrink) == 0)) return; // nothing to do
     if (datab) {
 
         // implements GL_UNPACK_ROW_LENGTH
@@ -1778,21 +1640,10 @@ void APIENTRY_GL4ES gl4es_glTexImage2D(GLenum target, GLint level, GLint interna
             internalformat != GL_RGB10_A2)
             swizzle_texture(width, height, &format, &type, internalformat, new_format, NULL,
                             bound); // convert format even if data is NULL
-        if (internalformat == GL_R11F_G11F_B10F || internalformat == GL_R32F) {
-            type = GL_FLOAT;
-            if (format == GL_BGRA) format = GL_RGB;
-        }
+        if (internalformat == GL_R11F_G11F_B10F || internalformat == GL_R32F) type = GL_FLOAT;
         if (internalformat == GL_RGB10_A2) {
             if (format == GL_BGRA) format = GL_RGBA;
             type = GL_UNSIGNED_INT_2_10_10_10_REV;
-        }
-        if (internalformat == GL_RGB8 && format == GL_RGBA) {
-            internalformat = GL_RGBA8;
-            format = GL_RGBA;
-            type = GL_UNSIGNED_BYTE;
-        }
-        if (type == GL_HALF_FLOAT_OES) {
-            type = GL_HALF_FLOAT;
         }
         if (bound->shrink != 0) {
             switch (globals4es.texshrink) {

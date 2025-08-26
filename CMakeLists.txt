@@ -130,6 +130,7 @@ set(C_SRC_FILES
     src/glx/streaming.c
     src/gl/vgpu/shaderconv.c
     src/gl/samplers.c
+    src/gl/libtxc_dxtn/txc_compress_dxtn.c
 )
 
 if(NOT ANDROID)

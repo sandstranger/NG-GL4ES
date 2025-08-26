@@ -247,6 +247,7 @@ extern "C"
                 strcat(extensions, "GL_ARB_get_program_binary ");
             }
 
+            if (globals4es.dxt != 2)
                 strcat(extensions, "GL_EXT_texture_compression_s3tc "
                     "GL_OES_texture_compression_S3TC "
                     "GL_EXT_texture_compression_dxt1 "
