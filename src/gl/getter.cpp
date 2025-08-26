@@ -121,11 +121,6 @@ extern "C"
                    "GL_EXT_draw_range_elements "
                    "GL_EXT_bgra "
                    "GL_ARB_texture_compression "
-                   "GL_EXT_texture_compression_s3tc "
-                   "GL_OES_texture_compression_S3TC "
-                   "GL_EXT_texture_compression_dxt1 "
-                   "GL_EXT_texture_compression_dxt3 "
-                   "GL_EXT_texture_compression_dxt5 "
                    "GL_ARB_point_parameters "
                    "GL_EXT_point_parameters "
                    "GL_EXT_stencil_wrap "
@@ -248,6 +243,15 @@ extern "C"
             if (hardext.prgbin_n) {
                 strcat(extensions, "GL_ARB_get_program_binary ");
             }
+
+
+            if (globals4es.dxt != 2)
+                strcat(extensions, "GL_EXT_texture_compression_s3tc "
+                    "GL_OES_texture_compression_S3TC "
+                    "GL_EXT_texture_compression_dxt1 "
+                    "GL_EXT_texture_compression_dxt3 "
+                    "GL_EXT_texture_compression_dxt5 ");
+
             char* p = extensions;
             glstate->num_extensions = 0;
             // quickly count extensions. Each one is separated by space...

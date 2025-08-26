@@ -412,6 +412,15 @@ void GetHardwareExtensions(int notest) {
         if (versionMajor > 3 || (versionMajor == 3 && versionMinor >= 2)) { // GLES 3.2+
             hardext.basevertex = 1;
         }
+
+        S("GL_EXT_texture_compression_s3tc ", dxtCompression, 1);
+        S("GL_EXT_texture_compression_dxt1 ", dxt1, 1);
+        S("GL_EXT_texture_compression_dxt3 ", dxt3, 1);
+        S("GL_EXT_texture_compression_dxt5 ", dxt5, 1);
+        S("GL_ANGLE_texture_compression_dxt1 ", dxt1angle, 1);
+        S("GL_ANGLE_texture_compression_dxt3 ", dxt3angle, 1);
+        S("GL_ANGLE_texture_compression_dxt5 ", dxt5angle, 1);
+
     }
 
     // Now get some max stuffs

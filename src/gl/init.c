@@ -158,6 +158,27 @@ void initialize_gl4es() {
     env(LIBGL_XREFRESH, globals4es.xrefresh, "xrefresh will be called on cleanup");
     env(LIBGL_STACKTRACE, globals4es.stacktrace, "stacktrace will be printed on crash");
 
+
+    switch(ReturnEnvVarInt("LIBGL_DXT")) {
+    	case 1:
+        SHUT_LOGD("forcing software DXT decompression\n");
+        globals4es.dxt = 1;
+    	  break;
+    	case 2:
+        SHUT_LOGD("not exposing DXT support\n");
+        globals4es.dxt = 2;
+    	  break;
+    	case 3:
+        SHUT_LOGD("handling DXT as is\n");
+        globals4es.dxt = 3;
+    	  break;
+    	default:
+        SHUT_LOGD("using hardware DXT if supported + software fallback\n");
+        globals4es.dxt = 0;
+    	  break;
+    }
+    globals4es.dxtmipmap = ReturnEnvVarInt("LIBGL_DXTMIPMAP");
+
     const int LIBGL_FB_ENV_VAR =
 #ifndef LIBGL_FB
         ReturnEnvVarInt("LIBGL_FB")

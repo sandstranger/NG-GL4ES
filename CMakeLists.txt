@@ -5,7 +5,7 @@ project(ng_gl4es)
 enable_language(CXX)
 set(CMAKE_C_STANDARD 23)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -pipe -integrated-as -mllvm -polly -mllvm -polly-vectorizer=stripmine -mllvm -polly-invariant-load-hoisting -mllvm -polly-run-inliner -mllvm -polly-run-dce -mllvm -polly-invariant-load-hoisting -flto=auto -mllvm -polly-run-inliner -mllvm -polly-run-dce -mllvm -polly-parallel -mllvm -polly-scheduling=dynamic -fno-emulated-tls -fwhole-program-vtables -fdata-sections -ffunction-sections -fmerge-all-constants -mllvm -polly-detect-keep-going -mllvm -polly-ast-use-context -fvisibility=hidden -Wall -Wextra -fPIC -DPIC -ferror-limit=0 -Wno-return-type -Wno-unused-parameter -Wno-c++98-compat -Wno-c++98-compat-pedantic -DGLM_FORCE_INTRINSICS -Wno-macro-redefined -Wno-gcc-compat -DDEFAULT_ES=3 -DNO_GBM -DNOX11 -ferror-limit=0")
@@ -100,6 +100,7 @@ set(C_SRC_FILES
         src/gl/samplers.c
         src/gl/pack/shader.c
         src/gl/pack/shaderconv.c
+        src/gl/libtxc_dxtn/txc_compress_dxtn.c
         )
 
 if(NOT ANDROID)

@@ -93,6 +93,8 @@ typedef struct _globals4es {
     const char* force_egl_lib;
     const char* force_gles_lib;
     _Bool enableANGLE;
+    int dxt;
+    int dxtmipmap;
 } globals4es_t;
 
 extern globals4es_t globals4es;
