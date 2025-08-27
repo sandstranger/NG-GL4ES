@@ -95,6 +95,7 @@ typedef struct _globals4es {
     _Bool enableANGLE;
     int dxt;
     int dxtmipmap;
+    int simple_shaderconv;
 } globals4es_t;
 
 extern globals4es_t globals4es;

@@ -179,6 +179,8 @@ void initialize_gl4es() {
     }
     globals4es.dxtmipmap = ReturnEnvVarInt("LIBGL_DXTMIPMAP");
 
+    env(LIBGL_SIMPLE_SHADERCONV, globals4es.simple_shaderconv, "Using simple/custom shaderconv");
+
     const int LIBGL_FB_ENV_VAR =
 #ifndef LIBGL_FB
         ReturnEnvVarInt("LIBGL_FB")

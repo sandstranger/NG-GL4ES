@@ -328,6 +328,172 @@ char* process_uniform_declarations(char* glslCode, uniforms_declarations uniform
 char* ConvertShaderConditionally(struct shader_s* shader_source) {
     int shaderCompileStatus;
 
+    if (globals4es.simple_shaderconv == 1) 
+    {
+        shader_source->converted = ConvertShaderSimple(shader_source->source, shader_source->type == GL_VERTEX_SHADER ? 1 : 0,&shader_source->need, 1);
+
+ //       shader_source->converted = ConvertShaderBuiltInVariableOnly(shader_source->source, shader_source->type == GL_VERTEX_SHADER ? 1 : 0,&shader_source->need, 1);
+
+        // Get the shader source
+        char * source = shader_source->converted;
+        int sourceLength = strlen(source) + 1;
+
+        if (shader_source->type == GL_VERTEX_SHADER) {
+            source = ReplaceVariableName(source, &sourceLength, "attribute", "in");
+            source = ReplaceVariableName(source, &sourceLength, "varying", "out");
+        }
+        else {
+            source = ReplaceVariableName(source, &sourceLength, "varying", "in");
+            source = ReplaceGLFragData(source, &sourceLength);
+            source = ReplaceGLFragColor(source, &sourceLength);
+        }
+
+        source = BackportConstArrays(source, &sourceLength);
+
+        // SHADRHACKS: better to change in source shaders directly
+        // Rafael VAIO
+        source = InplaceReplaceSimple(source, &sourceLength, "#define saturate(x) clamp(x, 0, 1)", "#define saturate(x) clamp(x, 0.0, 1.0)");
+        // Rafael wetworld, hbao, const float not handled by GL_EXT_shader_implicit_conversions
+        source = InplaceReplaceSimple(source, &sourceLength, "const float", "float");
+        // Rafael SMAA, missing defines
+        source = InplaceReplaceSimple(source, &sourceLength, "#define SMAA_CORNER_ROUNDING 25", "#define SMAA_CORNER_ROUNDING 25\n    #define SMAA_REPROJECTION 0\n #define FXAA_DISCARD 0\n");
+        // Wareya BadSSIL, float array
+        source = InplaceReplaceSimple(source, &sourceLength, "float eles[5] = {a_v, b_v, c_v, d_v, e_v};", "float eles[5] = float[](a_v, b_v, c_v, d_v, e_v);");
+        // Wazabear EdgeAA float<->bool conversion
+        source = InplaceReplaceSimple(source, &sourceLength, "if (edge.r)", "if (edge.r != 0.0)");
+        source = InplaceReplaceSimple(source, &sourceLength, "if (edge.g)", "if (edge.g != 0.0)");
+
+        // build in overrides workaround
+        source = InplaceReplaceSimple(source, &sourceLength, "pow (", "pow(");
+        source = InplaceReplaceSimple(source, &sourceLength, "pow(", "vgpu_pow(");
+
+        source = InplaceReplaceSimple(source, &sourceLength, "mod (", "mod(");
+        source = InplaceReplaceSimple(source, &sourceLength, "mod(", "vgpu_mod(");
+
+        source = InplaceReplaceSimple(source, &sourceLength, "mix (", "mix(");
+        source = InplaceReplaceSimple(source, &sourceLength, "mix(", "vgpu_mix(");
+
+        source = InplaceReplaceSimple(source, &sourceLength, "min (", "min(");
+        source = InplaceReplaceSimple(source, &sourceLength, "min(", "vgpu_min(");
+
+        source = InplaceReplaceSimple(source, &sourceLength, "max (", "max(");
+        source = InplaceReplaceSimple(source, &sourceLength, "max(", "vgpu_max(");
+
+        source = InplaceReplaceSimple(source, &sourceLength, "smoothstep (", "smoothstep(");
+        source = InplaceReplaceSimple(source, &sourceLength, "smoothstep(", "smoothstep_vgpu(");
+
+        source = InplaceReplaceSimple(source, &sourceLength, "step (", "step(");
+        source = InplaceReplaceSimple(source, &sourceLength, "step(", "vgpu_step(");
+
+        source = InplaceReplaceSimple(source, &sourceLength, "exp2 (", "exp2(");
+        source = InplaceReplaceSimple(source, &sourceLength, "exp2(", "vgpu_exp2(");
+
+        source = InplaceReplaceSimple(source, &sourceLength, "#version 120",
+"#version 320 es\n\
+#extension GL_EXT_shader_non_constant_global_initializers : enable\n\
+#extension GL_OES_standard_derivatives : enable\n\
+#extension GL_EXT_gpu_shader5 : enable\n\
+#extension GL_EXT_shader_implicit_conversions : enable\n\
+#extension GL_EXT_texture_cube_map_array : enable\n\
+#extension GL_EXT_texture_buffer : enable\n\
+#extension GL_OES_texture_storage_multisample_2d_array : enable\n\
+precision highp float;\n\
+precision highp int;\n\
+precision lowp sampler2D;\n\
+precision lowp sampler2DShadow;\n\
+#define sample sample2\n\
+#define texture2D texture\n\
+#define texture3D texture\n\
+#define texture2DProj textureProj\n\
+#define texture2DLod textureLod\n\
+#define shadow2DProj textureProj\n\
+#define textureSize2D textureSize\n\
+float vgpu_pow(float x, float y) { return pow(abs(x), y); }\n\
+float vgpu_pow(float x, int y) { return pow(abs(x), float(y)); }\n\
+float vgpu_pow(int x, float y) { return pow(abs(float(x)), y); }\n\
+float vgpu_pow(int x, int y) { return pow(abs(float(x)), float(y)); }\n\
+vec2 vgpu_pow(vec2 x, vec2 y) { return pow(abs(x), y); }\n\
+vec3 vgpu_pow(vec3 x, vec3 y) { return pow(abs(x), y); }\n\
+vec4 vgpu_pow(vec4 x, vec4 y) { return pow(abs(x), y); }\n\
+float vgpu_mod(float x, float y) { return mod(x, y); }\n\
+float vgpu_mod(float x, int y) { return mod(x, float(y)); }\n\
+float vgpu_mod(int x, float y) { return mod(float(x), y); }\n\
+float vgpu_mod(int x, int y) { return mod(float(x), float(y)); }\n\
+vec2 vgpu_mod(vec2 x, float y) { return mod(x, y); }\n\
+vec3 vgpu_mod(vec3 x, float y) { return mod(x, y); }\n\
+vec4 vgpu_mod(vec4 x, float y) { return mod(x, y); }\n\
+vec2 vgpu_mod(vec2 x, vec2 y) { return mod(x, y); }\n\
+vec3 vgpu_mod(vec3 x, vec3 y) { return mod(x, y); }\n\
+vec4 vgpu_mod(vec4 x, vec4 y) { return mod(x, y); }\n\
+float vgpu_mix(float x, float y, float a) { return mix(x, y, a); }\n\
+float vgpu_mix(int x, float y, float a) { return mix(float(x), y, a); }\n\
+float vgpu_mix(float x, int y, float a) { return mix(x, float(y), a); }\n\
+float vgpu_mix(int x, int y, float a) { return mix(float(x), float(y), a); }\n\
+vec2 vgpu_mix(vec2 x, vec2 y, float a) { return mix(x, y, a); }\n\
+vec3 vgpu_mix(vec3 x, vec3 y, float a) { return mix(x, y, a); }\n\
+vec4 vgpu_mix(vec4 x, vec4 y, float a) { return mix(x, y, a); }\n\
+vec2 vgpu_mix(vec2 x, vec2 y, vec2 a) { return mix(x, y, a); }\n\
+vec3 vgpu_mix(vec3 x, vec3 y, vec3 a) { return mix(x, y, a); }\n\
+vec4 vgpu_mix(vec4 x, vec4 y, vec4 a) { return mix(x, y, a); }\n\
+int vgpu_min(int x, int y) { return min(x, y); }\n\
+float vgpu_min(float x, float y) { return min(x, y); }\n\
+float vgpu_min(int x, float y) { return min(float(x), y); }\n\
+float vgpu_min(float x, int y) { return min(x, float(y)); }\n\
+vec2 vgpu_min(vec2 x, vec2 y) { return min(x, y); }\n\
+vec2 vgpu_min(vec2 x, float y) { return min(x, y); }\n\
+vec3 vgpu_min(vec3 x, vec3 y) { return min(x, y); }\n\
+vec3 vgpu_min(vec3 x, float y) { return min(x, y); }\n\
+vec4 vgpu_min(vec4 x, vec4 y) { return min(x, y); }\n\
+vec4 vgpu_min(vec4 x, float y) { return min(x, y); }\n\
+int vgpu_max(int x, int y) { return max(x, y); }\n\
+float vgpu_max(float x, float y) { return max(x, y); }\n\
+float vgpu_max(int x, float y) { return max(float(x), y); }\n\
+float vgpu_max(float x, int y) { return max(x, float(y)); }\n\
+vec2 vgpu_max(vec2 x, vec2 y) { return max(x, y); }\n\
+vec2 vgpu_max(vec2 x, float y) { return max(x, y); }\n\
+vec3 vgpu_max(vec3 x, vec3 y) { return max(x, y); }\n\
+vec3 vgpu_max(vec3 x, float y) { return max(x, y); }\n\
+vec4 vgpu_max(vec4 x, vec4 y) { return max(x, y); }\n\
+vec4 vgpu_max(vec4 x, float y) { return max(x, y); }\n\
+float smoothstep_vgpu(float x, float y, float a) { return smoothstep(x, y, a); }\n\
+float smoothstep_vgpu(int x, float y, float a) { return smoothstep(float(x), y, a); }\n\
+float smoothstep_vgpu(float x, int y, float a) { return smoothstep(x, float(y), a); }\n\
+float smoothstep_vgpu(int x, int y, float a) { return smoothstep(float(x), float(y), a); }\n\
+vec2 smoothstep_vgpu(float x, float y, vec2 a) { return smoothstep(x, y, a); }\n\
+vec2 smoothstep_vgpu(int x, float y, vec2 a) { return smoothstep(float(x), y, a); }\n\
+vec2 smoothstep_vgpu(float x, int y, vec2 a) { return smoothstep(x, float(y), a); }\n\
+vec2 smoothstep_vgpu(int x, int y, vec2 a) { return smoothstep(float(x), float(y), a); }\n\
+vec3 smoothstep_vgpu(float x, float y, vec3 a) { return smoothstep(x, y, a); }\n\
+vec3 smoothstep_vgpu(int x, float y, vec3 a) { return smoothstep(float(x), y, a); }\n\
+vec3 smoothstep_vgpu(float x, int y, vec3 a) { return smoothstep(x, float(y), a); }\n\
+vec3 smoothstep_vgpu(int x, int y, vec3 a) { return smoothstep(float(x), float(y), a); }\n\
+vec4 smoothstep_vgpu(float x, float y, vec4 a) { return smoothstep(x, y, a); }\n\
+vec4 smoothstep_vgpu(int x, float y, vec4 a) { return smoothstep(float(x), y, a); }\n\
+vec4 smoothstep_vgpu(float x, int y, vec4 a) { return smoothstep(x, float(y), a); }\n\
+vec4 smoothstep_vgpu(int x, int y, vec4 a) { return smoothstep(float(x), float(y), a); }\n\
+float vgpu_step(float x, float y) { return step(x, y); }\n\
+float vgpu_step(int x, float y) { return step(float(x), y); }\n\
+float vgpu_step(float x, int y) { return step(x, float(y)); }\n\
+float vgpu_step(int x, int y) { return step(float(x), float(y)); }\n\
+vec2 vgpu_step(float x, vec2 y) { return step(x, y); }\n\
+vec2 vgpu_step(int x, vec2 y) { return step(float(x), y); }\n\
+vec2 vgpu_step(vec2 x, vec2 y) { return step(x, y); }\n\
+vec3 vgpu_step(float x, vec3 y) { return step(x, y); }\n\
+vec3 vgpu_step(int x, vec3 y) { return step(float(x), y); }\n\
+vec3 vgpu_step(vec3 x, vec3 y) { return step(x, y); }\n\
+vec4 vgpu_step(float x, vec4 y) { return step(x, y); }\n\
+vec4 vgpu_step(int x, vec4 y) { return step(float(x), y); }\n\
+vec4 vgpu_step(vec4 x, vec4 y) { return step(x, y); }\n\
+float vgpu_exp2(float x) { return exp2(x); }\n\
+float vgpu_exp2(int x) { return exp2(float(x)); }\n\ 
+");
+
+        shader_source->converted = source;
+
+        return shader_source->converted;
+
+    }
+
     // First, vanilla gl4es, no forward port
     shader_source->converted =
         ConvertShader(shader_source->source, shader_source->type == GL_VERTEX_SHADER ? 1 : 0, &shader_source->need, 0);

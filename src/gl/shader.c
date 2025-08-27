@@ -139,13 +139,13 @@ void APIENTRY_GL4ES gl4es_glCompileShader(GLuint shader) {
             GLint status = 0;
             gles_glGetShaderiv(glshader->id, GL_COMPILE_STATUS, &status);
             if (status != GL_TRUE) {
-                DBG(SHUT_LOGD("LIBGL: Error while compiling shader %d. Original source is:\n%s\n=======\n", glshader->id,
-                          glshader->source);)
-                DBG(SHUT_LOGD("ShaderConv Source is:\n%s\n=======\n", glshader->converted);)
+                SHUT_LOGD("LIBGL: Error while compiling shader %d. Original source is:\n%s\n=======\n", glshader->id,
+                          glshader->source);
+                SHUT_LOGD("ShaderConv Source is:\n%s\n=======\n", glshader->converted);
                 char tmp[500];
                 GLint length;
                 gles_glGetShaderInfoLog(glshader->id, 500, &length, tmp);
-                DBG(SHUT_LOGD("Compiler message is\n%s\nLIBGL: End of Error log\n", tmp);)
+                SHUT_LOGD("Compiler message is\n%s\nLIBGL: End of Error log\n", tmp);
             }
         }
     } else
@@ -754,14 +754,17 @@ void APIENTRY_GL4ES gl4es_glShaderSource(GLuint shader, GLsizei count, const GLc
     }
     LOAD_GLES2(glShaderSource);
     if (gles_glShaderSource) {
+        int isFPEShader = (strstr(glshader->source, fpeshader_signature) != NULL) ? 1 : 0;
         // adapt shader if needed (i.e. not an es2 context and shader is not #version 100)
         if (is_direct_shader(glshader->source)) {
             glshader->converted = strdup(glshader->source);
+        } else if (globals4es.simple_shaderconv == 1 && !isFPEShader) {
+                glshader->converted = strdup(ConvertShaderConditionally(glshader));
+                glshader->is_converted_essl_320 = 0;
         } else {
             int glsl_version = getGLSLVersion(glshader->source);
             DBG(SHUT_LOGD("[INFO] [Shader] Shader source: "))
             DBG(SHUT_LOGD("%s", glshader->source))
-            int isFPEShader = (strstr(glshader->source, fpeshader_signature) != NULL) ? 1 : 0;
             if (glsl_version < 140 && !isFPEShader) {
                 glshader->source = replace_version_line(glshader->source);
                 glsl_version = 460;
