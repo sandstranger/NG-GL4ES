@@ -158,29 +158,6 @@ void initialize_gl4es() {
     env(LIBGL_XREFRESH, globals4es.xrefresh, "xrefresh will be called on cleanup");
     env(LIBGL_STACKTRACE, globals4es.stacktrace, "stacktrace will be printed on crash");
 
-
-    switch(ReturnEnvVarInt("LIBGL_DXT")) {
-    	case 1:
-        SHUT_LOGD("forcing software DXT decompression\n");
-        globals4es.dxt = 1;
-    	  break;
-    	case 2:
-        SHUT_LOGD("not exposing DXT support\n");
-        globals4es.dxt = 2;
-    	  break;
-    	case 3:
-        SHUT_LOGD("handling DXT as is\n");
-        globals4es.dxt = 3;
-    	  break;
-    	default:
-        SHUT_LOGD("using hardware DXT if supported + software fallback\n");
-        globals4es.dxt = 0;
-    	  break;
-    }
-    globals4es.dxtmipmap = ReturnEnvVarInt("LIBGL_DXTMIPMAP");
-
-    env(LIBGL_SIMPLE_SHADERCONV, globals4es.simple_shaderconv, "Using simple/custom shaderconv");
-
     const int LIBGL_FB_ENV_VAR =
 #ifndef LIBGL_FB
         ReturnEnvVarInt("LIBGL_FB")
@@ -787,6 +764,31 @@ void initialize_gl4es() {
     if (hardext.shader_fbfetch) {
         env(LIBGL_SHADERBLEND, globals4es.shaderblend, "Blend will be handled in shaders");
     }
+
+    switch(ReturnEnvVarInt("LIBGL_DXT")) {
+    	case 1:
+        SHUT_LOGD("forcing software DXT decompression\n");
+        globals4es.dxt = 1;
+    	  break;
+    	case 2:
+        SHUT_LOGD("not exposing DXT support\n");
+        globals4es.dxt = 2;
+    	  break;
+    	case 3:
+        SHUT_LOGD("handling DXT as is\n");
+        globals4es.dxt = 3;
+    	  break;
+    	default:
+        SHUT_LOGD("using hardware DXT if supported + software fallback");
+        globals4es.dxt = 0;
+    	  break;
+    }
+    globals4es.dxtmipmap = ReturnEnvVarInt("LIBGL_DXTMIPMAP");
+
+    globals4es.simple_shaderconv = ReturnEnvVarInt("LIBGL_SIMPLE_SHADERCONV");
+    if (globals4es.simple_shaderconv == 1) SHUT_LOGD("Using simple/custom shaderconn");
+    if (globals4es.simple_shaderconv == 2) SHUT_LOGD("Using simple/custom shaderconv with float hack");
+
     if (hardext.prgbin_n > 0 && !globals4es.notexarray) {
         env(LIBGL_NOPSA, globals4es.nopsa, "Don't use PrecompiledShaderArchive");
         if (globals4es.nopsa == 0) {

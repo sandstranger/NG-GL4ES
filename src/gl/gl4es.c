@@ -1204,11 +1204,18 @@ void APIENTRY_GL4ES gl4es_glColorMask(GLboolean red, GLboolean green, GLboolean 
 }
 AliasExport(void, glColorMask, , (GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha));
 
-void APIENTRY_GL4ES gl4es_glClear(GLbitfield mask) {
+typedef void (*glColorMaskiEXT_PTR)(GLuint buf, GLboolean r, GLboolean g, GLboolean b, GLboolean a);
+void gl4es_glClear(GLbitfield mask) {
     PUSH_IF_COMPILING(glClear);
 
-    mask &= GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
+//    mask &= GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
     LOAD_GLES(glClear);
+
+    LOAD_GLES(glColorMaskiEXT);
+    gles_glColorMaskiEXT(1, glstate->colormask[0], glstate->colormask[1], glstate->colormask[2], glstate->colormask[3]);
+    gl4es_glDepthMask(true);
+    gl4es_glStencilMask(true);
+
     gles_glClear(mask);
 }
 AliasExport(void, glClear, , (GLbitfield mask));

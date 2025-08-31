@@ -286,6 +286,9 @@ GLenum get_texture_wrap_s(gltexture_t* texture, glsampler_t* sampler) {
 GLenum get_texture_wrap_t(gltexture_t* texture, glsampler_t* sampler) {
     return get_texture_wrap(sampler->wrap_t, texture);
 }
+
+#define GL_TEXTURE_SWIZZLE_RGBA 0x8E46
+
 // TODO: also glTexParameterf(v)?
 void APIENTRY_GL4ES gl4es_glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params) {
     DBG(SHUT_LOGD("glTexParameterfv(%s, %s, [%f(%s)...])\n", PrintEnum(target), PrintEnum(pname), params[0],
@@ -307,10 +310,81 @@ void APIENTRY_GL4ES gl4es_glTexParameterfv(GLenum target, GLenum pname, const GL
     LOAD_GLES(glTexParameterfv);
     realize_bound(glstate->texture.active, target);
 
-    gles_glTexParameterfv(rtarget, pname, params);
+    if (pname == GL_TEXTURE_BORDER_COLOR) {
+        gles_glTexParameterfv(rtarget, pname, params);
+        samplerParameterfv(&texture->sampler, pname, params);
+        errorGL();
+        return;
+    }
+
+    if (pname == GL_TEXTURE_SWIZZLE_RGBA) {
+        gl4es_glTexParameterfv(rtarget, GL_TEXTURE_SWIZZLE_R, &params[0]);
+        gl4es_glTexParameterfv(rtarget, GL_TEXTURE_SWIZZLE_G, &params[1]);
+        gl4es_glTexParameterfv(rtarget, GL_TEXTURE_SWIZZLE_B, &params[2]);
+        gl4es_glTexParameterfv(rtarget, GL_TEXTURE_SWIZZLE_A, &params[3]);
+        return;
+    }
+
+    GLfloat param = params[0];
+    GLint iparam = params[0];
+
+    switch (pname) {
+        case GL_TEXTURE_LOD_BIAS:
+            return;
+        case GL_TEXTURE_MIN_FILTER:
+        case GL_TEXTURE_MAG_FILTER:
+            switch (iparam) {
+                case GL_NEAREST_MIPMAP_NEAREST:
+                case GL_NEAREST_MIPMAP_LINEAR:
+                case GL_LINEAR_MIPMAP_NEAREST:
+                case GL_LINEAR_MIPMAP_LINEAR:
+                case GL_LINEAR:
+                case GL_NEAREST:
+                    param = params[0];
+                    break;
+                default:
+                    SHUT_LOGD("Unknown GL_TEXTURE_MAG_FILTER %s\n", PrintEnum(params[0]));
+                    param = GL_NEAREST;
+            }
+            break;
+        case GL_TEXTURE_WRAP_S:
+        case GL_TEXTURE_WRAP_T:
+        case GL_TEXTURE_WRAP_R:
+            switch (iparam) {
+                case GL_CLAMP: //???
+                case GL_CLAMP_TO_EDGE:
+                case GL_CLAMP_TO_BORDER:
+                case GL_REPEAT:
+                case GL_MIRRORED_REPEAT_OES:
+                    param = params[0];
+                    break;
+                default:
+                    SHUT_LOGD("Unknown GL_TEXTURE_WRAP mode%s\n", PrintEnum(params[0]));
+                    param = GL_CLAMP_TO_EDGE;
+            }
+            break;
+        case GL_TEXTURE_COMPARE_MODE:
+        case GL_TEXTURE_COMPARE_FUNC:
+        case GL_TEXTURE_MAX_LEVEL:
+        case GL_TEXTURE_BASE_LEVEL:
+        case GL_TEXTURE_MIN_LOD:
+        case GL_TEXTURE_MAX_LOD:
+        case GL_GENERATE_MIPMAP:
+        case GL_TEXTURE_MAX_ANISOTROPY:
+        case GL_TEXTURE_SWIZZLE_R:
+        case GL_TEXTURE_SWIZZLE_G:
+        case GL_TEXTURE_SWIZZLE_B:
+        case GL_TEXTURE_SWIZZLE_A:
+            param = params[0];
+            break;
+        default:
+             SHUT_LOGD("Unknown texture parameter %s\n", PrintEnum(pname));
+    }
+
+    gles_glTexParameterfv(rtarget, pname, &param);
     errorGL();
 
-    if (!samplerParameterfv(&texture->sampler, pname, params)) {
+    if (!samplerParameterfv(&texture->sampler, pname, &param)) {
         GLint param = params[0];
         switch (pname) {
         case GL_TEXTURE_MAX_LEVEL:
@@ -373,7 +447,7 @@ void APIENTRY_GL4ES gl4es_glTexParameteri(GLenum target, GLenum pname, GLint par
 void APIENTRY_GL4ES gl4es_glTexParameteriv(GLenum target, GLenum pname, const GLint* params) {
     GLfloat fparams[4];
     fparams[0] = *params;
-    if (pname == GL_TEXTURE_BORDER_COLOR)
+    if (pname == GL_TEXTURE_BORDER_COLOR || pname == GL_TEXTURE_SWIZZLE_RGBA)
         for (int i = 1; i < 4; ++i)
             fparams[i] = params[i];
     gl4es_glTexParameterfv(target, pname, fparams);

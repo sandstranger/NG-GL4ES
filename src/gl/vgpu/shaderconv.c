@@ -328,15 +328,27 @@ char* process_uniform_declarations(char* glslCode, uniforms_declarations uniform
 char* ConvertShaderConditionally(struct shader_s* shader_source) {
     int shaderCompileStatus;
 
-    if (globals4es.simple_shaderconv == 1) 
-    {
-        shader_source->converted = ConvertShaderSimple(shader_source->source, shader_source->type == GL_VERTEX_SHADER ? 1 : 0,&shader_source->need, 1);
+    const char* fpeshader_signature = "// FPE_Shader generated\n";
+    int isFPEShader = (strstr(shader_source->source, fpeshader_signature) != NULL) ? 1 : 0;
 
- //       shader_source->converted = ConvertShaderBuiltInVariableOnly(shader_source->source, shader_source->type == GL_VERTEX_SHADER ? 1 : 0,&shader_source->need, 1);
+    if (globals4es.simple_shaderconv && !isFPEShader) 
+    {
+        shader_source->converted = ConvertShaderSimple(shader_source->source, shader_source->type == GL_VERTEX_SHADER ? 1 : 0, &shader_source->need, 1);
 
         // Get the shader source
         char * source = shader_source->converted;
         int sourceLength = strlen(source) + 1;
+
+        if (globals4es.simple_shaderconv == 2) {
+            source = CoerceIntToFloat(source, &sourceLength);
+            source = ForceIntegerArrayAccess(source, &sourceLength);
+
+            source = InplaceReplaceSimple(source, &sourceLength, "float mask = float(0.0xff);", "int mask = int(0xff);");
+            source = InplaceReplaceSimple(source, &sourceLength, "const vec4 shift = vec4(float(0.0), float(8.0), float(16.0), float(24.0));", "const ivec4 shift = ivec4(int(0), int(8), int(16), int(24));");
+            source = InplaceReplaceSimple(source, &sourceLength, "(data >> shift.", "(int(data) >> shift.");
+            source = InplaceReplaceSimple(source, &sourceLength, "vec4 packedColors;", "ivec4 packedColors;");
+            source = InplaceReplaceSimple(source, &sourceLength, "uniform float PointLightIndex", "uniform int PointLightIndex");
+        }
 
         if (shader_source->type == GL_VERTEX_SHADER) {
             source = ReplaceVariableName(source, &sourceLength, "attribute", "in");

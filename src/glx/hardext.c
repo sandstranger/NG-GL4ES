@@ -421,6 +421,11 @@ void GetHardwareExtensions(int notest) {
         S("GL_ANGLE_texture_compression_dxt3 ", dxt3angle, 1);
         S("GL_ANGLE_texture_compression_dxt5 ", dxt5angle, 1);
 
+        S("GL_EXT_clip_control ", clipcontrol, 1);
+        S("GL_EXT_depth_clamp", depthclamp, 1);
+        S("GL_EXT_disjoint_timer_query", timerquery, 1);
+        S("GL_EXT_draw_buffers_indexed", drawindexed, 1);
+
     }
 
     // Now get some max stuffs

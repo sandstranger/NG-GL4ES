@@ -1,5 +1,5 @@
 #include "framebuffers.h"
-
+ 
 #if !defined(ANDROID) && !defined(AMIGAOS4) && !defined(__EMSCRIPTEN__) && !defined(__APPLE__)
 #include <execinfo.h>
 #endif
@@ -1823,6 +1823,55 @@ void APIENTRY_GL4ES gl4es_glColorMaskIndexed(GLuint framebuffer, GLboolean red, 
     gl4es_glBindFramebuffer(target, oldf);
 }
 
+typedef void (*glEnableiEXT_PTR)(GLenum target, GLuint index);
+void APIENTRY_GL4ES gl4es_glEnableiEXT(GLenum target, GLuint index)
+{
+    LOAD_GLES(glEnableiEXT);
+    gles_glEnableiEXT(target, index);
+}
+
+typedef void (*glDisableiEXT_PTR)(GLenum target, GLuint index);
+void APIENTRY_GL4ES gl4es_glDisableiEXT(GLenum target, GLuint index)
+{
+    LOAD_GLES(glDisableiEXT);
+    gles_glDisableiEXT(target, index);
+}
+
+typedef void (*glColorMaskiEXT_PTR)(GLuint buf, GLboolean r, GLboolean g, GLboolean b, GLboolean a);
+void APIENTRY_GL4ES gl4es_glColorMaskiEXT(GLuint buf, GLboolean r, GLboolean g, GLboolean b, GLboolean a)
+{
+    LOAD_GLES(glColorMaskiEXT);
+    gles_glColorMaskiEXT(buf, r, g, b, a);
+}
+
+typedef GLboolean (*glIsEnablediEXT_PTR)(GLenum target, GLuint index);
+GLboolean APIENTRY_GL4ES gl4es_glIsEnablediEXT(GLenum target, GLuint index)
+{
+    LOAD_GLES(glIsEnablediEXT);
+    return gles_glIsEnablediEXT(target, index);
+}
+
+typedef void (*glBlendFunciEXT_PTR)(GLuint buf, GLenum src, GLenum dst);
+void APIENTRY_GL4ES APIENTRY_GL4ES gl4es_glBlendFunciEXT(GLuint buf, GLenum src, GLenum dst)
+{
+    LOAD_GLES(glBlendFunciEXT);
+    gles_glBlendFunciEXT(buf, src, dst);
+}
+
+typedef void (*glBlendEquationiEXT_PTR)(GLuint buf, GLenum mode);
+void APIENTRY_GL4ES gl4es_glBlendEquationiEXT(GLuint buf, GLenum mode)
+{
+    LOAD_GLES(glBlendEquationiEXT);
+    gles_glBlendEquationiEXT(buf, mode);
+}
+
+typedef void (*glBlendFuncSeparateiEXT_PTR)(GLuint buf, GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
+void APIENTRY_GL4ES gl4es_glBlendFuncSeparateiEXT(GLuint buf, GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)
+{
+    LOAD_GLES(glBlendFuncSeparateiEXT);
+    gles_glBlendFuncSeparateiEXT(buf, srcRGB, dstRGB, srcAlpha, dstAlpha);
+}
+
 void gl4es_saveCurrentFBO() {
     // this, in fact, bind FBO to 0 if it wasn't
     GLuint framebuffer = (glstate->fbo.current_fb) ? glstate->fbo.current_fb->id : 0;
@@ -1939,3 +1988,11 @@ AliasExport(void, glClearNamedFramebufferfv, EXT,
             (GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLfloat* value));
 AliasExport(void, glClearNamedFramebufferfi, EXT,
             (GLuint framebuffer, GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil));
+
+AliasExport(void, glEnableiEXT, ,(GLenum target, GLuint index));
+AliasExport(void, glDisableiEXT, ,(GLenum target, GLuint index));
+AliasExport(void, glColorMaskiEXT, ,(GLuint buf, GLboolean r, GLboolean g, GLboolean b, GLboolean a));
+AliasExport(GLboolean, glIsEnablediEXT, ,(GLenum target, GLuint index));
+AliasExport(void, glBlendFunciEXT, ,(GLuint buf, GLenum src, GLenum dst));
+AliasExport(void, glBlendEquationiEXT, ,(GLuint buf, GLenum mode));
+AliasExport(void, glBlendFuncSeparateiEXT, ,(GLuint buf, GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha));

@@ -556,6 +556,7 @@ void APIENTRY_GL4ES gl4es_glGetProgramiv(GLuint program, GLenum pname, GLint* pa
         } else
             *params = 0;
         break;
+/*
     case GL_ACTIVE_UNIFORMS:
         *params = (glprogram->uniform) ? glprogram->num_uniform : 0;
         break;
@@ -564,6 +565,7 @@ void APIENTRY_GL4ES gl4es_glGetProgramiv(GLuint program, GLenum pname, GLint* pa
         uniform_t* m;
         kh_foreach_value(glprogram->uniform, m, if (l < strlen(m->name) + 1) l = strlen(m->name) + 1;)* params = l;
     } break;
+*/
     case GL_PROGRAM_BINARY_LENGTH:
         // TODO: check if extension is present
         if (gles_glGetProgramiv) {

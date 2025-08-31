@@ -85,6 +85,10 @@ typedef struct _hardext {
     int dxt1angle;      // GL_ANGLE_texture_compression_dxt1
     int dxt3angle;      // GL_ANGLE_texture_compression_dxt3
     int dxt5angle;      // GL_ANGLE_texture_compression_dxt5
+    int clipcontrol;    // GL_EXT_clip_control
+    int depthclamp;     // GL_EXT_depth_clamp
+    int timerquery;     // GL_EXT_disjoint_timer_query
+    int drawindexed;    // GL_EXT_draw_buffers_indexed
 } hardext_t;
 
 EXPORT extern hardext_t hardext;

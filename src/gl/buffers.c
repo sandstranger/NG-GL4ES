@@ -859,6 +859,34 @@ void APIENTRY_GL4ES gl4es_glUniformBlockBinding(GLuint program, GLuint blockInde
     noerrorShim();
 }
 
+typedef void (*glGetUniformIndices_PTR) (GLuint program, GLsizei uniformCount, const GLchar* const* uniformNames, GLuint* uniformIndices);
+void APIENTRY_GL4ES gl4es_glGetUniformIndices(GLuint program, GLsizei uniformCount, const GLchar* const* uniformNames, GLuint* uniformIndices)
+{
+    LOAD_GLES(glGetUniformIndices);
+    gles_glGetUniformIndices(program, uniformCount, uniformNames, uniformIndices);
+}
+
+typedef void (*glGetActiveUniformsiv_PTR) (GLuint program, GLsizei uniformCount, const GLuint* uniformIndices, GLenum pname, GLint* params);
+void APIENTRY_GL4ES gl4es_glGetActiveUniformsiv(GLuint program, GLsizei uniformCount, const GLuint* uniformIndices, GLenum pname, GLint* params)
+{
+    LOAD_GLES(glGetActiveUniformsiv);
+    gles_glGetActiveUniformsiv(program, uniformCount, uniformIndices, pname, params);
+}
+
+typedef void (*glGetActiveUniformBlockiv_PTR) (GLuint program, GLuint uniformBlockIndex, GLenum pname, GLint* params);
+void APIENTRY_GL4ES gl4es_glGetActiveUniformBlockiv(GLuint program, GLuint uniformBlockIndex, GLenum pname, GLint* params)
+{
+    LOAD_GLES(glGetActiveUniformBlockiv);
+    gles_glGetActiveUniformBlockiv(program, uniformBlockIndex, pname, params);
+}
+
+typedef void (*glGetActiveUniformBlockName_PTR) (GLuint program, GLuint uniformBlockIndex, GLsizei bufSize, GLsizei* length, GLchar* uniformBlockName);
+void APIENTRY_GL4ES gl4es_glGetActiveUniformBlockName(GLuint program, GLuint uniformBlockIndex, GLsizei bufSize, GLsizei* length, GLchar* uniformBlockName)
+{
+    LOAD_GLES(glGetActiveUniformBlockName);
+    gles_glGetActiveUniformBlockName(program, uniformBlockIndex, bufSize, length, uniformBlockName);
+}
+
 void bindBuffer(GLenum target, GLuint buffer) {
     DBG(SHUT_LOGD("bindBuffer(%s, %i)\n", PrintEnum(target), buffer);)
     LOAD_GLES(glBindBuffer);
@@ -1185,3 +1213,8 @@ AliasExport(void, glGenVertexArrays, , (GLsizei n, GLuint* arrays));
 AliasExport(void, glBindVertexArray, , (GLuint array));
 AliasExport(void, glDeleteVertexArrays, , (GLsizei n, const GLuint* arrays));
 AliasExport(GLboolean, glIsVertexArray, , (GLuint array));
+
+AliasExport(void, glGetUniformIndices, ,(GLuint program, GLsizei uniformCount, const GLchar* const* uniformNames, GLuint* uniformIndices));
+AliasExport(void, glGetActiveUniformsiv, ,(GLuint program, GLsizei uniformCount, const GLuint* uniformIndices, GLenum pname, GLint* params));
+AliasExport(void, glGetActiveUniformBlockiv, ,(GLuint program, GLuint uniformBlockIndex, GLenum pname, GLint* params));
+AliasExport(void, glGetActiveUniformBlockName, ,(GLuint program, GLuint uniformBlockIndex, GLsizei bufSize, GLsizei* length, GLchar* uniformBlockName));

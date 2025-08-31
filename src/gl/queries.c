@@ -318,9 +318,75 @@ void APIENTRY_GL4ES gl4es_glGetQueryObjectui64v(GLuint id, GLenum pname, GLuint6
     }
     noerrorShim();
 }
- 
 
+// disjoint_timer_query
+typedef void (*glGenQueriesEXT_PTR) (GLsizei n, GLuint *ids);
+typedef void (*glDeleteQueriesEXT_PTR) (GLsizei n, const GLuint *ids);
+typedef GLboolean (*glIsQueryEXT_PTR) (GLuint id);
+typedef void (*glBeginQueryEXT_PTR) (GLenum target, GLuint id);
+typedef void (*GL_APIENTRY glEndQueryEXT_PTR) (GLenum target);
+typedef void (*GL_APIENTRY glGetQueryivEXT_PTR) (GLenum target, GLenum pname, GLint *params);
+typedef void (*GL_APIENTRY glGetQueryObjectuivEXT_PTR) (GLuint id, GLenum pname, GLuint *params);
+typedef void (*GL_APIENTRY glGetInteger64vEXT_PTR) (GLenum pname, GLint64 *data);
 
+void gl4es_glGenQueriesEXT(GLsizei n, GLuint *ids)
+{
+    LOAD_GLES(glGenQueriesEXT);
+    gles_glGenQueriesEXT(n, ids);
+}
+
+void gl4es_glDeleteQueriesEXT(GLsizei n, const GLuint *ids)
+{
+    LOAD_GLES(glDeleteQueriesEXT);
+    gles_glDeleteQueriesEXT(n, ids);
+}
+
+GLboolean gl4es_glIsQueryEXT(GLuint id)
+{
+    LOAD_GLES(glIsQueryEXT);
+    return gles_glIsQueryEXT(id);
+}
+
+void gl4es_glBeginQueryEXT(GLenum target, GLuint id)
+{
+    LOAD_GLES(glBeginQueryEXT);
+    gles_glBeginQueryEXT(target, id);
+}
+
+void gl4es_glEndQueryEXT(GLenum target)
+{
+    LOAD_GLES(glEndQueryEXT);
+    gles_glEndQueryEXT(target);
+}
+
+void gl4es_glGetQueryivEXT(GLenum target, GLenum pname, GLint *params)
+{	
+    LOAD_GLES(glGetQueryivEXT);
+    gles_glGetQueryivEXT(target, pname, params);
+}
+
+void gl4es_glGetQueryObjectuivEXT(GLuint id, GLenum pname, GLuint *params)
+{
+    LOAD_GLES(glGetQueryObjectuivEXT);
+    gles_glGetQueryObjectuivEXT(id, pname, params);
+}
+
+void gl4es_glGetInteger64vEXT(GLenum pname, GLint64 *data)
+{
+    LOAD_GLES(glGetInteger64vEXT);
+    gles_glGetInteger64vEXT(pname, data);
+}
+
+AliasExport(void, glGenQueriesEXT, ,(GLsizei n, GLuint *ids));
+AliasExport(void, glDeleteQueriesEXT, ,(GLsizei n, const GLuint *ids));
+AliasExport(GLboolean , glIsQueryEXT, ,(GLuint id));
+AliasExport(void, glBeginQueryEXT, ,(GLenum target, GLuint id));
+AliasExport(void, glEndQueryEXT, ,(GLenum target));
+AliasExport(void, glGetQueryivEXT, ,(GLenum target, GLenum pname, GLint *params));
+AliasExport(void, glGetQueryObjectuivEXT, ,(GLuint id, GLenum pname, GLuint *params));
+AliasExport(void, glGetInteger64vEXT, ,(GLenum pname, GLint64 *data));
+
+/*
 //Direct wrapper
 AliasExport(void,glGenQueries,,(GLsizei n, GLuint * ids));
 AliasExport(GLboolean,glIsQuery,,(GLuint id));
@@ -344,3 +410,5 @@ AliasExport(void,glGetQueryiv,ARB,(GLenum target, GLenum pname, GLint* params));
 AliasExport(void,glGetQueryObjectiv,ARB,(GLuint id, GLenum pname, GLint* params));
 AliasExport(void,glGetQueryObjectuiv,ARB,(GLuint id, GLenum pname, GLuint* params));
 AliasExport(void,glQueryCounter,ARB,(GLuint id, GLenum target));
+*/
+

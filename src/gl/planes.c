@@ -30,4 +30,13 @@ void APIENTRY_GL4ES gl4es_glClipPlanef(GLenum plane, const GLfloat *equation)
     }
 }
 
+typedef void (*glClipControlEXT_PTR)(GLenum origin, GLenum depthMode);
+void APIENTRY_GL4ES gl4es_glClipControl(GLenum origin, GLenum depthMode) {
+    LOAD_GLES(glClipControlEXT);
+    if (!gles_glClipControlEXT) return;
+
+    gles_glClipControlEXT(origin, depthMode);
+}
+AliasExport(void, glClipControl, ,(GLenum origin, GLenum depthMode));
+
 AliasExport(void,glClipPlanef,,(GLenum pname, const GLfloat* params));

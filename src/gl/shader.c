@@ -758,7 +758,7 @@ void APIENTRY_GL4ES gl4es_glShaderSource(GLuint shader, GLsizei count, const GLc
         // adapt shader if needed (i.e. not an es2 context and shader is not #version 100)
         if (is_direct_shader(glshader->source)) {
             glshader->converted = strdup(glshader->source);
-        } else if (globals4es.simple_shaderconv == 1 && !isFPEShader) {
+        } else if (globals4es.simple_shaderconv && !isFPEShader) {
                 glshader->converted = strdup(ConvertShaderConditionally(glshader));
                 glshader->is_converted_essl_320 = 0;
         } else {

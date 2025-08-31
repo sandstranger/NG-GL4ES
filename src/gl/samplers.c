@@ -12,7 +12,7 @@
 #include "texture.h"
 #include "../../include/khash.h"
 
-// #define DEBUG
+//#define DEBUG
 #ifdef DEBUG
 #define DBG(a) a
 #else
@@ -225,6 +225,11 @@ int samplerParameterfv(glsampler_t* sampler, GLenum pname, const GLfloat* params
     case GL_TEXTURE_BORDER_COLOR:
         memcpy(sampler->border_color, params, 4 * sizeof(GLfloat));
         break;
+    case GL_TEXTURE_SWIZZLE_R:
+    case GL_TEXTURE_SWIZZLE_G:
+    case GL_TEXTURE_SWIZZLE_B:
+    case GL_TEXTURE_SWIZZLE_A:
+        return 1;
     default:
         return 0;
     }
