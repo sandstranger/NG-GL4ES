@@ -331,24 +331,24 @@ char* ConvertShaderConditionally(struct shader_s* shader_source) {
     const char* fpeshader_signature = "// FPE_Shader generated\n";
     int isFPEShader = (strstr(shader_source->source, fpeshader_signature) != NULL) ? 1 : 0;
 
+    const char* postprocessshader_signature = "// OMW Post-Process shader\n";
+    int isPPShader = (strstr(shader_source->source, postprocessshader_signature) != NULL) ? 1 : 0;
+
+if(isPPShader) SHUT_LOGD("POST PROCESS SHADER\n");
+if(isFPEShader) SHUT_LOGD("FPE SHADER\n");
+if(!isFPEShader && !isPPShader) SHUT_LOGD("CORE SHADER\n");
+
     if (globals4es.simple_shaderconv && !isFPEShader) 
     {
+/*
+int sourceLengthaaa = strlen(shader_source->source) + 1;
+        shader_source->source = InplaceReplaceSimple(shader_source->source, &sourceLengthaaa, "#ifdef ADDITIVE_BLENDING", "#if defined(ADDITIVE_BLENDING)");
+*/
         shader_source->converted = ConvertShaderSimple(shader_source->source, shader_source->type == GL_VERTEX_SHADER ? 1 : 0, &shader_source->need, 1);
 
         // Get the shader source
         char * source = shader_source->converted;
         int sourceLength = strlen(source) + 1;
-
-        if (globals4es.simple_shaderconv == 2) {
-            source = CoerceIntToFloat(source, &sourceLength);
-            source = ForceIntegerArrayAccess(source, &sourceLength);
-
-            source = InplaceReplaceSimple(source, &sourceLength, "float mask = float(0.0xff);", "int mask = int(0xff);");
-            source = InplaceReplaceSimple(source, &sourceLength, "const vec4 shift = vec4(float(0.0), float(8.0), float(16.0), float(24.0));", "const ivec4 shift = ivec4(int(0), int(8), int(16), int(24));");
-            source = InplaceReplaceSimple(source, &sourceLength, "(data >> shift.", "(int(data) >> shift.");
-            source = InplaceReplaceSimple(source, &sourceLength, "vec4 packedColors;", "ivec4 packedColors;");
-            source = InplaceReplaceSimple(source, &sourceLength, "uniform float PointLightIndex", "uniform int PointLightIndex");
-        }
 
         if (shader_source->type == GL_VERTEX_SHADER) {
             source = ReplaceVariableName(source, &sourceLength, "attribute", "in");
@@ -362,43 +362,70 @@ char* ConvertShaderConditionally(struct shader_s* shader_source) {
 
         source = BackportConstArrays(source, &sourceLength);
 
-        // SHADRHACKS: better to change in source shaders directly
-        // Rafael VAIO
-        source = InplaceReplaceSimple(source, &sourceLength, "#define saturate(x) clamp(x, 0, 1)", "#define saturate(x) clamp(x, 0.0, 1.0)");
-        // Rafael wetworld, hbao, const float not handled by GL_EXT_shader_implicit_conversions
-        source = InplaceReplaceSimple(source, &sourceLength, "const float", "float");
-        // Rafael SMAA, missing defines
-        source = InplaceReplaceSimple(source, &sourceLength, "#define SMAA_CORNER_ROUNDING 25", "#define SMAA_CORNER_ROUNDING 25\n    #define SMAA_REPROJECTION 0\n #define FXAA_DISCARD 0\n");
-        // Wareya BadSSIL, float array
-        source = InplaceReplaceSimple(source, &sourceLength, "float eles[5] = {a_v, b_v, c_v, d_v, e_v};", "float eles[5] = float[](a_v, b_v, c_v, d_v, e_v);");
-        // Wazabear EdgeAA float<->bool conversion
-        source = InplaceReplaceSimple(source, &sourceLength, "if (edge.r)", "if (edge.r != 0.0)");
-        source = InplaceReplaceSimple(source, &sourceLength, "if (edge.g)", "if (edge.g != 0.0)");
+        if (isPPShader) {
+            // SHADRHACKS: better to change in source shaders directly
+            // Rafael VAIO
+            source = InplaceReplaceSimple(source, &sourceLength, "#define saturate(x) clamp(x, 0, 1)", "#define saturate(x) clamp(x, 0.0, 1.0)");
+            // Rafael wetworld, hbao, const float not handled by GL_EXT_shader_implicit_conversions
+            source = InplaceReplaceSimple(source, &sourceLength, "const float", "float");
+            // Rafael SMAA, missing defines
+            source = InplaceReplaceSimple(source, &sourceLength, "#define SMAA_CORNER_ROUNDING 25", "#define SMAA_CORNER_ROUNDING 25\n    #define SMAA_REPROJECTION 0\n #define FXAA_DISCARD 0\n");
+            // Wareya BadSSIL, float array
+            source = InplaceReplaceSimple(source, &sourceLength, "float eles[5] = {a_v, b_v, c_v, d_v, e_v};", "float eles[5] = float[](a_v, b_v, c_v, d_v, e_v);");
+            // Wazabear EdgeAA float<->bool conversion
+            source = InplaceReplaceSimple(source, &sourceLength, "if (edge.r)", "if (edge.r != 0.0)");
+            source = InplaceReplaceSimple(source, &sourceLength, "if (edge.g)", "if (edge.g != 0.0)");
 
-        // build in overrides workaround
-        source = InplaceReplaceSimple(source, &sourceLength, "pow (", "pow(");
-        source = InplaceReplaceSimple(source, &sourceLength, "pow(", "vgpu_pow(");
+            // build in overrides workaround
+            source = InplaceReplaceSimple(source, &sourceLength, "pow (", "pow(");
+            source = InplaceReplaceSimple(source, &sourceLength, "pow(", "vgpu_pow(");
 
-        source = InplaceReplaceSimple(source, &sourceLength, "mod (", "mod(");
-        source = InplaceReplaceSimple(source, &sourceLength, "mod(", "vgpu_mod(");
+            source = InplaceReplaceSimple(source, &sourceLength, "mod (", "mod(");
+            source = InplaceReplaceSimple(source, &sourceLength, "mod(", "vgpu_mod(");
 
-        source = InplaceReplaceSimple(source, &sourceLength, "mix (", "mix(");
-        source = InplaceReplaceSimple(source, &sourceLength, "mix(", "vgpu_mix(");
+            source = InplaceReplaceSimple(source, &sourceLength, "mix (", "mix(");
+            source = InplaceReplaceSimple(source, &sourceLength, "mix(", "vgpu_mix(");
 
-        source = InplaceReplaceSimple(source, &sourceLength, "min (", "min(");
-        source = InplaceReplaceSimple(source, &sourceLength, "min(", "vgpu_min(");
+            source = InplaceReplaceSimple(source, &sourceLength, "min (", "min(");
+            source = InplaceReplaceSimple(source, &sourceLength, "min(", "vgpu_min(");
 
-        source = InplaceReplaceSimple(source, &sourceLength, "max (", "max(");
-        source = InplaceReplaceSimple(source, &sourceLength, "max(", "vgpu_max(");
+            source = InplaceReplaceSimple(source, &sourceLength, "max (", "max(");
+            source = InplaceReplaceSimple(source, &sourceLength, "max(", "vgpu_max(");
 
-        source = InplaceReplaceSimple(source, &sourceLength, "smoothstep (", "smoothstep(");
-        source = InplaceReplaceSimple(source, &sourceLength, "smoothstep(", "smoothstep_vgpu(");
+            source = InplaceReplaceSimple(source, &sourceLength, "smoothstep (", "smoothstep(");
+            source = InplaceReplaceSimple(source, &sourceLength, "smoothstep(", "smoothstep_vgpu(");
 
-        source = InplaceReplaceSimple(source, &sourceLength, "step (", "step(");
-        source = InplaceReplaceSimple(source, &sourceLength, "step(", "vgpu_step(");
+            source = InplaceReplaceSimple(source, &sourceLength, "step (", "step(");
+            source = InplaceReplaceSimple(source, &sourceLength, "step(", "vgpu_step(");
 
-        source = InplaceReplaceSimple(source, &sourceLength, "exp2 (", "exp2(");
-        source = InplaceReplaceSimple(source, &sourceLength, "exp2(", "vgpu_exp2(");
+            source = InplaceReplaceSimple(source, &sourceLength, "exp2 (", "exp2(");
+            source = InplaceReplaceSimple(source, &sourceLength, "exp2(", "vgpu_exp2(");
+        }
+
+        if (!isPPShader) {
+            if (globals4es.simple_shaderconv == 2) {
+                source = CoerceIntToFloat(source, &sourceLength);
+                source = ForceIntegerArrayAccess(source, &sourceLength);
+
+                source = InplaceReplaceSimple(source, &sourceLength, "float mask = float(0.0xff);", "int mask = int(0xff);");
+                source = InplaceReplaceSimple(source, &sourceLength, "const vec4 shift = vec4(float(0.0), float(8.0), float(16.0), float(24.0));", "const ivec4 shift = ivec4(int(0), int(8), int(16), int(24));");
+                source = InplaceReplaceSimple(source, &sourceLength, "(data >> shift.", "(int(data) >> shift.");
+                source = InplaceReplaceSimple(source, &sourceLength, "vec4 packedColors;", "ivec4 packedColors;");
+                source = InplaceReplaceSimple(source, &sourceLength, "uniform float PointLightIndex", "uniform int PointLightIndex");
+            }
+
+            source = InplaceReplaceSimple(source, &sourceLength, ": #version 120", ": version 120"); // uhh? some osg stuff
+
+            source = InplaceReplaceSimple(source, &sourceLength, "textureSize2D(", "vgpu_textureSize2D(");
+            source = InplaceReplaceSimple(source, &sourceLength, "shadow2DProj(", "vgpu_shadow2DProj(");
+            source = InplaceReplaceSimple(source, &sourceLength, "#extension GL_ARB_uniform_buffer_object : require", "");
+            source = InplaceReplaceSimple(source, &sourceLength, "#extension GL_EXT_gpu_shader4: require", "");
+            source = InplaceReplaceSimple(source, &sourceLength, "uniform LightBufferBinding", "layout (std140) uniform LightBufferBinding");
+            source = InplaceReplaceSimple(source, &sourceLength, "uniform bool useAdvancedShader = false;", "uniform bool useAdvancedShader;");
+            source = InplaceReplaceSimple(source, &sourceLength, "uniform vec2 scaling = vec2(1.0, 1.0);", "uniform vec2 scaling;");
+            source = InplaceReplaceSimple(source, &sourceLength, "uniform bool alphaTestShadows = true;", "uniform bool alphaTestShadows;");
+            source = InplaceReplaceSimple(source, &sourceLength, "uniform bool useDiffuseMapForShadowAlpha = true;", "uniform bool useDiffuseMapForShadowAlpha;");
+        }
 
         source = InplaceReplaceSimple(source, &sourceLength, "#version 120",
 "#version 320 es\n\
@@ -497,7 +524,9 @@ vec4 vgpu_step(float x, vec4 y) { return step(x, y); }\n\
 vec4 vgpu_step(int x, vec4 y) { return step(float(x), y); }\n\
 vec4 vgpu_step(vec4 x, vec4 y) { return step(x, y); }\n\
 float vgpu_exp2(float x) { return exp2(x); }\n\
-float vgpu_exp2(int x) { return exp2(float(x)); }\n\ 
+float vgpu_exp2(int x) { return exp2(float(x)); }\n\
+vec2 vgpu_textureSize2D(sampler2D sampler, int level) { return vec2(textureSize(sampler, level)); }\n\
+vec4 vgpu_shadow2DProj(sampler2DShadow sampler, vec4 uv) { return vec4(textureProj(sampler, uv)); }\n\
 ");
 
         shader_source->converted = source;

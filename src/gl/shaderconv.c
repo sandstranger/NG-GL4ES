@@ -1904,10 +1904,10 @@ char* ConvertShaderSimple(const char* pEntry, int isVertex, shaderconv_need_t *n
   if((globals4es.dbgshaderconv&maskbefore)==maskbefore) {
     printf("Shader source%s:\n%s\n", pEntry, fpeShader?" (FPEShader generated)":"");
   }
-  int comments = globals4es.comments;
+ // int comments = globals4es.comments;
 
   char* pBuffer = (char*)pEntry;
-
+/*
   char* versionString = NULL;
   if(!fpeShader) {
     extensions_t exts;  // dummy...
@@ -1923,7 +1923,7 @@ char* ConvertShaderSimple(const char* pEntry, int isVertex, shaderconv_need_t *n
     if(exts.ext)
       free(exts.ext);
   }
-
+*/
   static shaderconv_need_t dummy_need = {0};
   if(!need) {
     need = &dummy_need;
