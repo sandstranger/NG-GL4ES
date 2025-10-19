@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include "init.h"
 #include "attributes.h"
+#include "android/log.h"
+
 //----------------------------------------------------------------------------
 void LogPrintf_NoPrefix(const char *fmt,...);
 void LogFPrintf(FILE *fp,const char *fmt,...);
@@ -15,7 +17,7 @@ void write_log(const char* format, ...);
 	#define SHUT_LOGD_NOPREFIX(...)
 	#define SHUT_LOGE(...)
 #else
-	#define SHUT_LOGD(...) {printf(__VA_ARGS__);printf("\n");write_log(__VA_ARGS__);}
+#define SHUT_LOGD(...) {__android_log_print(ANDROID_LOG_INFO, "LIBGL", __VA_ARGS__);}
 	#define SHUT_LOGD_NOPREFIX(...) {if(!globals4es.nobanner) LogPrintf_NoPrefix(__VA_ARGS__);}
 	#define SHUT_LOGE(...) {printf(__VA_ARGS__);printf("\n");write_log(__VA_ARGS__);}
 #endif

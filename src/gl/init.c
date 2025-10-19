@@ -790,6 +790,7 @@ void initialize_gl4es() {
     if (globals4es.simple_shaderconv == 2) SHUT_LOGD("Using simple/custom shaderconv with float hack");
 
     if (hardext.prgbin_n > 0 && !globals4es.notexarray) {
+
         env(LIBGL_NOPSA, globals4es.nopsa, "Don't use PrecompiledShaderArchive");
         if (globals4es.nopsa == 0) {
             cwd[0] = '\0';
@@ -811,6 +812,7 @@ void initialize_gl4es() {
 #endif
             if (strlen(cwd)) {
                 strcat(cwd, ".gl4es.psa");
+                SHUT_LOGD("Path To PSA file = %s", cwd);
                 fpe_InitPSA(cwd);
                 fpe_readPSA();
             }
