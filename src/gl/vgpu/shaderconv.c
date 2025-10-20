@@ -348,14 +348,19 @@ int sourceLengthaaa = strlen(shader_source->source) + 1;
 
         // Get the shader source
         char * source = shader_source->converted;
+
         int sourceLength = strlen(source) + 1;
 
+        source = InplaceReplaceSimple(source, &sourceLength, "#define texture texture2D\n", "");
+        source = InplaceReplaceSimple(source, &sourceLength, "#define attribute in\n", "");
+        source = InplaceReplaceSimple(source, &sourceLength, "#define varying out\n", "");
+
         if (shader_source->type == GL_VERTEX_SHADER) {
-            source = ReplaceVariableName(source, &sourceLength, "attribute", "in");
-            source = ReplaceVariableName(source, &sourceLength, "varying", "out");
+            source = InplaceReplaceSimple(source, &sourceLength, "attribute", "in");
+            source = InplaceReplaceSimple(source, &sourceLength, "varying", "out");
         }
         else {
-            source = ReplaceVariableName(source, &sourceLength, "varying", "in");
+            source = InplaceReplaceSimple(source, &sourceLength, "varying", "in");
             source = ReplaceGLFragData(source, &sourceLength);
             source = ReplaceGLFragColor(source, &sourceLength);
         }
@@ -430,9 +435,13 @@ int sourceLengthaaa = strlen(shader_source->source) + 1;
         source = InplaceReplaceSimple(source, &sourceLength, "#version 120",
 "#version 320 es\n\
 #extension GL_EXT_shader_non_constant_global_initializers : enable\n\
-#extension GL_OES_standard_derivatives : enable\n\
 #extension GL_EXT_gpu_shader5 : enable\n\
+#ifdef GL_OES_standard_derivatives\n\
+#extension GL_OES_standard_derivatives : enable\n\
+#endif\n\
+#ifdef GL_EXT_shader_implicit_conversi\n\
 #extension GL_EXT_shader_implicit_conversions : enable\n\
+#endif\n\
 #extension GL_EXT_texture_cube_map_array : enable\n\
 #extension GL_EXT_texture_buffer : enable\n\
 #extension GL_OES_texture_storage_multisample_2d_array : enable\n\
@@ -558,6 +567,7 @@ vec4 vgpu_shadow2DProj(sampler2DShadow sampler, vec4 uv) { return vec4(texturePr
     // Process uniform declarations
     shader_source->converted = process_uniform_declarations(
         shader_source->converted, shader_source->uniforms_declarations, &shader_source->uniforms_declarations_count);
+
     return shader_source->converted;
 }
 
