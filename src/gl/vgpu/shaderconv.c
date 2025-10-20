@@ -439,7 +439,7 @@ int sourceLengthaaa = strlen(shader_source->source) + 1;
 #ifdef GL_OES_standard_derivatives\n\
 #extension GL_OES_standard_derivatives : enable\n\
 #endif\n\
-#ifdef GL_EXT_shader_implicit_conversi\n\
+#ifdef GL_EXT_shader_implicit_conversions\n\
 #extension GL_EXT_shader_implicit_conversions : enable\n\
 #endif\n\
 #extension GL_EXT_texture_cube_map_array : enable\n\
