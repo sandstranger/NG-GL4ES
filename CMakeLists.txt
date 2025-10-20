@@ -112,8 +112,6 @@ set(CPP_SRC_FILES
 
 set(SRC_FILES ${CPP_SRC_FILES} ${C_SRC_FILES})
 
-find_library(GLSLANG_LIB glslang PATHS ${CMAKE_SOURCE_DIR}/libraries/arm64-v8a/)
-
 add_library(ng_gl4es SHARED ${SRC_FILES})
 
 if(MACOS)
@@ -144,22 +142,7 @@ if(MACOS)
 else()
 if(ANDROID)
     # Android
-    find_library(GLSLANG_LIB glslang PATHS ${CMAKE_SOURCE_DIR}/library/android/${ANDROID_ABI}/)
     target_link_libraries(${CMAKE_PROJECT_NAME}
-        ${CMAKE_SOURCE_DIR}/library/android/${ANDROID_ABI}/libglslang.a
-        ${CMAKE_SOURCE_DIR}/library/android/${ANDROID_ABI}/libspirv-cross-c-shared.so
-        ${CMAKE_SOURCE_DIR}/library/android/${ANDROID_ABI}/libGenericCodeGen.a
-        ${CMAKE_SOURCE_DIR}/library/android/${ANDROID_ABI}/libglslang-default-resource-limits.a
-        ${CMAKE_SOURCE_DIR}/library/android/${ANDROID_ABI}/libMachineIndependent.a
-        ${CMAKE_SOURCE_DIR}/library/android/${ANDROID_ABI}/libOSDependent.a
-        ${CMAKE_SOURCE_DIR}/library/android/${ANDROID_ABI}/libSPIRV-Tools-diff.a
-        ${CMAKE_SOURCE_DIR}/library/android/${ANDROID_ABI}/libSPIRV-Tools-link.a
-        ${CMAKE_SOURCE_DIR}/library/android/${ANDROID_ABI}/libSPIRV-Tools-lint.a
-        ${CMAKE_SOURCE_DIR}/library/android/${ANDROID_ABI}/libSPIRV-Tools-opt.a
-        ${CMAKE_SOURCE_DIR}/library/android/${ANDROID_ABI}/libSPIRV-Tools-reduce.a
-        ${CMAKE_SOURCE_DIR}/library/android/${ANDROID_ABI}/libSPIRV-Tools.a
-        ${CMAKE_SOURCE_DIR}/library/android/${ANDROID_ABI}/libSPIRV.a
-        ${CMAKE_SOURCE_DIR}/library/android/${ANDROID_ABI}/libSPVRemapper.a
         android
         log
     )
