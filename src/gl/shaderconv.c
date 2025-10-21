@@ -233,6 +233,8 @@ static const char* gl4es_ftransformSource = "\n"
                                             " return gl_ModelViewProjectionMatrix * gl_Vertex;\n"
                                             "}\n";
 
+static const char* gl4es_dummyClipVertex = "vec4 dummyClipVertex_%d";
+
 static const char* gl4es_ClipVertex = 
 
 "vec4 gl4es_ClipVertex;\n";
