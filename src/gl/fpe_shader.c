@@ -1557,7 +1557,7 @@ const char* const* fpe_CustomFragmentShader(const char* initial, fpe_state_t* st
         // wrap real main...
         shad = InplaceReplace(shad, &shad_cap, "main", "_gl4es_main");
     }
-    int is_fragcolor = (strstr(shad, "gl_FragColor") != NULL) ? 1 : 0;
+    int is_fragcolor = (strstr(shad, "gl_FragColor") != NULL || strstr(shad, "gl4es_FragColor") != NULL) ? 1 : 0;
     if (strstr(shad, "_gl4es_main")) {
         ShadAppend("void main() {\n");
         ShadAppend(" _gl4es_main();\n");

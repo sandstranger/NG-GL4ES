@@ -169,6 +169,14 @@ extern "C"
                    //"GL_ARB_multi_bind "
                    "GL_ARB_indirect_parameters "
                    "GL_ARB_draw_indirect "
+                   "GL_ARB_shader_texture_lod "
+                   "GL_ARB_uniform_buffer_object "
+                   "GL_ARB_copy_buffer "
+                   "GL_ARB_sync "
+                   "GL_ARB_fragment_coord_conventions "
+                   "GL_ARB_sampler_objects "
+                   "GL_ARB_texture_swizzle "
+                   "GL_ARB_compatibility "
                    //"GL_ARB_separate_shader_objects "
                    //                "GL_EXT_blend_logic_op "
             );
@@ -183,6 +191,7 @@ extern "C"
             if (hardext.blendsub) strcat(extensions, "GL_EXT_blend_subtract ");
             if (hardext.aniso) strcat(extensions, "GL_EXT_texture_filter_anisotropic ");
             if (hardext.mirrored) strcat(extensions, "GL_ARB_texture_mirrored_repeat ");
+            if (hardext.blend_func_extended) strcat(extensions, "GL_ARB_blend_func_extended ");
             if (hardext.fbo)
                 strcat(extensions, "GL_ARB_framebuffer_object "
                                    "GL_EXT_framebuffer_object "

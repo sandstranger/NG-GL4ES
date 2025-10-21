@@ -341,6 +341,7 @@ void GetHardwareExtensions(int notest) {
     S("GL_OES_packed_depth_stencil ", depthstencil, 1);
     S("GL_OES_depth24 ", depth24, 1);
     S("GL_OES_rgb8_rgba8 ", rgba8, 1);
+    S("GL_EXT_blend_func_extended ", blend_func_extended, 0);
     S("GL_EXT_multi_draw_arrays ", multidraw, 0);
     if (!globals4es.nobgra) {
         // S("GL_EXT_texture_format_BGRA8888 ", bgra8888, 1);

@@ -4296,6 +4296,22 @@ typedef void (*glGetSynciv_PTR)(glGetSynciv_ARG_EXPAND);
 void gl4es_glMultiDrawElementsBaseVertex(glMultiDrawElementsBaseVertex_ARG_EXPAND);
 typedef void (*glMultiDrawElementsBaseVertex_PTR)(glMultiDrawElementsBaseVertex_ARG_EXPAND);
 
+#define glBindFragDataLocationIndexedEXT_ARG_EXPAND GLuint program, GLuint colorNumber, GLuint index, const char *name
+void gl4es_glBindFragDataLocationIndexedEXT(glBindFragDataLocationIndexedEXT_ARG_EXPAND);
+typedef void (*glBindFragDataLocationIndexedEXT_PTR)(glBindFragDataLocationIndexedEXT_ARG_EXPAND);
+
+#define glGetFragDataIndexEXT_ARG_EXPAND GLuint program, const char *name
+GLint gl4es_glGetFragDataIndexEXT(glGetFragDataIndexEXT_ARG_EXPAND);
+typedef GLint (*glGetFragDataIndexEXT_PTR)(glGetFragDataIndexEXT_ARG_EXPAND);
+
+#define glBindFragDataLocationEXT_ARG_EXPAND GLuint program, GLuint colorNumber, const char *name
+void gl4es_glBindFragDataLocationEXT(glBindFragDataLocationEXT_ARG_EXPAND);
+typedef void (*glBindFragDataLocationEXT_PTR)(glBindFragDataLocationEXT_ARG_EXPAND);
+
+#define glGetProgramResourceLocationIndexEXT_ARG_EXPAND GLuint program, GLenum programInterface, const char *name
+GLint gl4es_glGetProgramResourceLocationIndexEXT(glGetProgramResourceLocationIndexEXT_ARG_EXPAND);
+typedef GLint (*glGetProgramResourceLocationIndexEXT_PTR)(glGetProgramResourceLocationIndexEXT_ARG_EXPAND);
+
 #ifndef direct_glActiveTexture
 #define push_glActiveTexture(texture) { \
     glActiveTexture_PACKED *packed_data = malloc(sizeof(glActiveTexture_PACKED)); \
