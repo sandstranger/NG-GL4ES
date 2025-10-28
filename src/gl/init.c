@@ -80,7 +80,7 @@ void set_getprocaddress(void*(APIENTRY_GL4ES* new_proc_address)(const char*)) {
 void init_internal_glDrawElementsBaseVertex();
 void initialize_ng_gl4es() {
     
-    int enableANGLE = ReturnEnvVarInt("ENABLE_ANGLE");
+    int enableANGLE = ReturnEnvVarIntDef("ENABLE_ANGLE", 0);
     globals4es.enableANGLE = enableANGLE;
     if (enableANGLE) {
         setenv("LIBGL_GLES", "libGLESv2_angle.so", 1);
