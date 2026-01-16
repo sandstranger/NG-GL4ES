@@ -239,7 +239,7 @@ void initialize_gl4es() {
     // SET_CONFIG_STRING(force_egl_lib);
     // SET_CONFIG_STRING(force_gles_lib);
 
-    globals4es.gl = ReturnEnvVarInt("LIBGL_GL");
+    globals4es.gl = 21;//ReturnEnvVarInt("LIBGL_GL");
     switch (globals4es.gl) {
     case 10:
     case 11:
@@ -437,7 +437,9 @@ void initialize_gl4es() {
         SHUT_LOGD("Stub/non present functions are printed");
     }
 
-    env(LIBGL_VABGRA, globals4es.vabgra, "Export GL_ARB_vertex_array_bgra extension");
+    globals4es.vabgra = 1;
+
+//    env(LIBGL_VABGRA, globals4es.vabgra, "Export GL_ARB_vertex_array_bgra extension");
 
     // const char *env_version = GetEnvVar("LIBGL_VERSION");
     bool env_version = false; // force it not to be modified
@@ -765,6 +767,8 @@ void initialize_gl4es() {
         env(LIBGL_SHADERBLEND, globals4es.shaderblend, "Blend will be handled in shaders");
     }
 
+    globals4es.dxt = 1;
+/*
     switch(ReturnEnvVarInt("LIBGL_DXT")) {
     	case 1:
         SHUT_LOGD("forcing software DXT decompression\n");
@@ -782,10 +786,10 @@ void initialize_gl4es() {
         SHUT_LOGD("using hardware DXT if supported + software fallback");
         globals4es.dxt = 0;
     	  break;
-    }
-    globals4es.dxtmipmap = ReturnEnvVarInt("LIBGL_DXTMIPMAP");
+    }*/
+    globals4es.dxtmipmap = 1;//ReturnEnvVarInt("LIBGL_DXTMIPMAP");
 
-    globals4es.simple_shaderconv = ReturnEnvVarInt("LIBGL_SIMPLE_SHADERCONV");
+    globals4es.simple_shaderconv = 1;//ReturnEnvVarInt("LIBGL_SIMPLE_SHADERCONV");
     if (globals4es.simple_shaderconv == 1) SHUT_LOGD("Using simple/custom shaderconn");
     if (globals4es.simple_shaderconv == 2) SHUT_LOGD("Using simple/custom shaderconv with float hack");
 
