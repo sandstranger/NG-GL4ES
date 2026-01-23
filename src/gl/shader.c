@@ -117,6 +117,19 @@ void APIENTRY_GL4ES gl4es_glDeleteShader(GLuint shader) {
     }
 }
 
+#define LOG_CHUNK_SIZE 4000
+
+void log_long_shader(const char* tag, const char* text) {
+    size_t len = strlen(text);
+    for (size_t i = 0; i < len; i += LOG_CHUNK_SIZE) {
+        size_t chunk_len = (i + LOG_CHUNK_SIZE < len) ? LOG_CHUNK_SIZE : (len - i);
+        char buffer[LOG_CHUNK_SIZE + 1];
+        memcpy(buffer, text + i, chunk_len);
+        buffer[chunk_len] = '\0';
+        SHUT_LOGD("%s", buffer);
+    }
+}
+
 void APIENTRY_GL4ES gl4es_glCompileShader(GLuint shader) {
     DBG(SHUT_LOGD("glCompileShader(%d)\n", shader))
     // look for the shader
@@ -135,9 +148,10 @@ void APIENTRY_GL4ES gl4es_glCompileShader(GLuint shader) {
             GLint status = 0;
             gles_glGetShaderiv(glshader->id, GL_COMPILE_STATUS, &status);
             if (status != GL_TRUE) {
-                SHUT_LOGD("LIBGL: Error while compiling shader %d. Original source is:\n%s\n=======\n", glshader->id,
-                          glshader->source);
-                SHUT_LOGD("ShaderConv Source is:\n%s\n=======\n", glshader->converted);
+                SHUT_LOGD("LIBGL: Error while compiling shader %d. Original source:\n", glshader->id);
+                log_long_shader("LIBGL", glshader->source);
+                SHUT_LOGD("ShaderConv Source is:\n");
+                log_long_shader("LIBGL", glshader->converted);
                 char tmp[500];
                 GLint length;
                 gles_glGetShaderInfoLog(glshader->id, 500, &length, tmp);
