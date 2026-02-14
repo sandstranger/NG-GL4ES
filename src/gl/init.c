@@ -239,7 +239,7 @@ void initialize_gl4es() {
     // SET_CONFIG_STRING(force_egl_lib);
     // SET_CONFIG_STRING(force_gles_lib);
 
-    globals4es.gl = 21;//ReturnEnvVarInt("LIBGL_GL");
+    globals4es.gl = 41;//ReturnEnvVarInt("LIBGL_GL");
     switch (globals4es.gl) {
     case 10:
     case 11:
@@ -333,29 +333,7 @@ void initialize_gl4es() {
     env(LIBGL_RECYCLEFBO, globals4es.recyclefbo, "Recycling of FBO enabled");
 
     // Texture hacks
-    globals4es.automipmap = ReturnEnvVarInt("LIBGL_MIPMAP");
-    switch (globals4es.automipmap) {
-    case 1:
-        SHUT_LOGD("AutoMipMap forced");
-        break;
-    case 2:
-        SHUT_LOGD("guess AutoMipMap");
-        break;
-    case 3:
-        SHUT_LOGD("ignore MipMap");
-        break;
-    case 4:
-        SHUT_LOGD("ignore AutoMipMap on non-squared textures");
-        break;
-    case 5:
-        SHUT_LOGD("Calculate sub-mipmap in case some are missing");
-        break;
-    default:
-        globals4es.automipmap = 0;
-        break;
-    }
-
-    globals4es.automipmap = 0;
+    SHUT_LOGD("AutoMipMap forced");
 
     if (IsEnvVarTrue("LIBGL_TEXCOPY")) {
         globals4es.texcopydata = 1;

@@ -22,6 +22,11 @@ extern "C"
 }
 
 // #define DEBUG
+#ifdef DEBUG
+#define DBG(a) a
+#else
+#define DBG(a)
+#endif
 
 std::string GLSLtoGLSLES(const char* glsl_code, GLenum glsl_type, unsigned int essl_version, unsigned int glsl_version,
                          int& return_code);
@@ -238,16 +243,13 @@ std::string process_uniform_declarations(const std::string& glslCode) {
             const size_t decl_start = scan_pos;
             scan_pos += 7; // Skip "uniform"
 
-            // 解析精度限定符和类型
             std::string precision, type;
             bool found_precision = false;
 
-            // 第一轮解析：类型前的精度限定符
             while (scan_pos < length) {
                 while (scan_pos < length && std::isspace(glslCode[scan_pos]))
                     ++scan_pos;
 
-                // 检查精度限定符
                 for (const auto& kw : precision_kws) {
                     if (glslCode.compare(scan_pos, kw.length(), kw) == 0) {
                         precision = " " + kw;
@@ -258,7 +260,6 @@ std::string process_uniform_declarations(const std::string& glslCode) {
                 }
                 if (found_precision) break;
 
-                // 开始提取类型
                 const size_t type_start = scan_pos;
                 while (scan_pos < length && (std::isalnum(glslCode[scan_pos]) || glslCode[scan_pos] == '_')) {
                     ++scan_pos;
@@ -267,7 +268,6 @@ std::string process_uniform_declarations(const std::string& glslCode) {
                 break;
             }
 
-            // 第二轮解析：类型后的精度限定符
             while (scan_pos < length) {
                 while (scan_pos < length && std::isspace(glslCode[scan_pos]))
                     ++scan_pos;
@@ -284,7 +284,6 @@ std::string process_uniform_declarations(const std::string& glslCode) {
                 if (!found) break;
             }
 
-            // 确保类型被正确提取
             if (type.empty()) {
                 const size_t type_start = scan_pos;
                 while (scan_pos < length && (std::isalnum(glslCode[scan_pos]) || glslCode[scan_pos] == '_')) {
@@ -293,7 +292,6 @@ std::string process_uniform_declarations(const std::string& glslCode) {
                 type = glslCode.substr(type_start, scan_pos - type_start);
             }
 
-            // 提取变量名
             while (scan_pos < length && std::isspace(glslCode[scan_pos]))
                 ++scan_pos;
             const size_t name_start = scan_pos;
@@ -302,14 +300,12 @@ std::string process_uniform_declarations(const std::string& glslCode) {
             }
             const std::string name = glslCode.substr(name_start, scan_pos - name_start);
 
-            // 定位声明结束
             size_t decl_end = glslCode.find(';', scan_pos);
             if (decl_end == std::string::npos)
                 decl_end = length;
             else
                 ++decl_end;
 
-            // 处理初始化值
             const bool has_initializer = (glslCode.find('=', scan_pos) < decl_end);
             if (has_initializer) {
                 result.append("uniform").append(precision).append(" ").append(type).append(" ").append(name).append(
@@ -697,7 +693,7 @@ vec4 GI_TemporalFilter() {
 
 void inject_ngg_macro_definition(std::string& glslCode) {
     std::string macro_definitions = "\n#define NGG_NGG\n"
-                                    "#define NGG_NGG_VERSION " xstr(MAJOR) xstr(MINOR) xstr(REVISION) xstr(PATCH) "\n";
+                                    "#define NGG_NGG_VERSION " xstr(MAJOR) xstr(MINOR) xstr(REVISION) "\n";
 
     size_t versionPos = glslCode.rfind("#version");
     size_t insertionPos = 0;
@@ -755,25 +751,89 @@ int get_or_add_glsl_version(std::string& glsl) {
     return glsl_version;
 }
 
+std::vector<unsigned int> glsl_to_spirv(GLenum shader_type, int glsl_version, const char* const* shader_src,
+                                        int& errc) {
+    EShLanguage shader_language;
+    switch (shader_type) {
+    case GL_VERTEX_SHADER:
+        shader_language = EShLanguage::EShLangVertex;
+        break;
+    case GL_FRAGMENT_SHADER:
+        shader_language = EShLanguage::EShLangFragment;
+        break;
+    case GL_COMPUTE_SHADER:
+        shader_language = EShLanguage::EShLangCompute;
+        break;
+    case GL_TESS_CONTROL_SHADER:
+        shader_language = EShLanguage::EShLangTessControl;
+        break;
+    case GL_TESS_EVALUATION_SHADER:
+        shader_language = EShLanguage::EShLangTessEvaluation;
+        break;
+    case GL_GEOMETRY_SHADER:
+        shader_language = EShLanguage::EShLangGeometry;
+        break;
+    default:
+        // LOGD("GLSL type not supported!")
+        errc = -1;
+        return {};
+    }
+
+    glslang::TShader shader(shader_language);
+    shader.setStrings(shader_src, 1);
+
+    using namespace glslang;
+    shader.setEnvInput(EShSourceGlsl, shader_language, EShClientVulkan, glsl_version);
+    shader.setEnvClient(EShClientOpenGL, EShTargetOpenGL_450);
+    shader.setEnvTarget(EShTargetSpv, EShTargetSpv_1_5);
+    shader.setAutoMapLocations(true);
+    shader.setAutoMapBindings(true);
+
+    TBuiltInResource TBuiltInResource_resources = InitResources();
+
+    if (!shader.parse(&TBuiltInResource_resources, glsl_version, true, EShMsgDefault)) {
+        DBG(SHUT_LOGD("glslang: GLSL Compiling ERROR: \n%s", shader.getInfoLog());)
+        errc = -1;
+        return {};
+    }
+    DBG(SHUT_LOGD("GLSL Compiled to SPIRV.");)
+
+    glslang::TProgram program;
+    program.addShader(&shader);
+
+    if (!program.link(EShMsgDefault)) {
+        DBG(SHUT_LOGD("glslang: GLSL Linking ERROR: \n%s", program.getInfoLog());)
+        errc = -1;
+        return {};
+    }
+    DBG(SHUT_LOGD("GLSL Linked.");)
+    std::vector<unsigned int> spirv_code;
+    glslang::SpvOptions spvOptions;
+    spvOptions.disableOptimizer = false;
+    glslang::GlslangToSpv(*program.getIntermediate(shader_language), spirv_code, &spvOptions);
+    errc = 0;
+    return spirv_code;
+}
+
 std::string spirv_to_essl(std::vector<unsigned int> spirv, unsigned int essl_version, int& errc) {
     spvc_context context = nullptr;
     spvc_parsed_ir ir = nullptr;
     spvc_compiler compiler_glsl = nullptr;
     spvc_compiler_options options = nullptr;
     spvc_resources resources = nullptr;
-    const spvc_reflected_resource* list = nullptr;
+    //    const spvc_reflected_resource* list = nullptr;
     const char* result = nullptr;
-    size_t count;
+    //    size_t count;
 
     const SpvId* p_spirv = spirv.data();
     size_t word_count = spirv.size();
 
-    // LOGD("spirv_code.size(): %d", spirv.size())
+    DBG(SHUT_LOGD("spirv_code.size(): %d", spirv.size()))
     spvc_context_create(&context);
     spvc_context_parse_spirv(context, p_spirv, word_count, &ir);
     spvc_context_create_compiler(context, SPVC_BACKEND_GLSL, ir, SPVC_CAPTURE_MODE_TAKE_OWNERSHIP, &compiler_glsl);
     spvc_compiler_create_shader_resources(compiler_glsl, &resources);
-    spvc_resources_get_resource_list_for_type(resources, SPVC_RESOURCE_TYPE_UNIFORM_BUFFER, &list, &count);
+    //    spvc_resources_get_resource_list_for_type(resources, SPVC_RESOURCE_TYPE_UNIFORM_BUFFER, &list, &count);
     spvc_compiler_create_compiler_options(compiler_glsl, &options);
     spvc_compiler_options_set_uint(options, SPVC_COMPILER_OPTION_GLSL_VERSION,
                                    essl_version >= 300 ? essl_version : 300);
@@ -782,7 +842,7 @@ std::string spirv_to_essl(std::vector<unsigned int> spirv, unsigned int essl_ver
     spvc_compiler_compile(compiler_glsl, &result);
 
     if (!result) {
-        printf("Error: unexpected error in spirv-cross.");
+        DBG(SHUT_LOGD("Error: unexpected error in spirv-cross."));
         errc = -1;
         return "";
     }
@@ -799,7 +859,7 @@ static bool glslang_inited = false;
 std::string GLSLtoGLSLES_2(const char* glsl_code, GLenum glsl_type, unsigned int essl_version, int& return_code) {
     bool atomicCounterEmulated = false;
     std::string correct_glsl_str = preprocess_glsl(glsl_code, glsl_type, &atomicCounterEmulated);
-    // LOGD("Firstly converted GLSL:\n%s", correct_glsl_str.c_str())
+    DBG(SHUT_LOGD("Firstly converted GLSL:\n%s", correct_glsl_str.c_str()))
     int glsl_version = get_or_add_glsl_version(correct_glsl_str);
 
     if (!glslang_inited) {
@@ -811,6 +871,7 @@ std::string GLSLtoGLSLES_2(const char* glsl_code, GLenum glsl_type, unsigned int
     std::vector<unsigned int> spirv_code = glsl_to_spirv(glsl_type, glsl_version, s, errc);
     if (errc != 0) {
         return_code = -1;
+        DBG(SHUT_LOGD("Error compiling GLSL to SPIR-V: %d", errc))
         return "";
     }
     errc = 0;
@@ -828,7 +889,7 @@ std::string GLSLtoGLSLES_2(const char* glsl_code, GLenum glsl_type, unsigned int
     essl = processOutColorLocations(essl);
     essl = forceSupporterOutput(essl);
 
-    // LOGD("Originally GLSL to GLSL ES Complete: \n%s", essl.c_str())
+    DBG(SHUT_LOGD("Originally GLSL to GLSL ES Complete: \n%s", essl.c_str()))
     return_code = errc;
     if (return_code == 0) {
         return_code = atomicCounterEmulated ? 1 : 0;
