@@ -344,7 +344,6 @@ bool checkIfAtomicCounterBufferEmulated(const std::string& glslCode) {
 char* GLSLtoGLSLES_c(const char* glsl_code, GLenum glsl_type, unsigned int essl_version, unsigned int glsl_version,
                      int* return_code) {
     int tmp_return_code = 0;
-    SHUT_LOGD("CALLED CONVERSION = %s", glsl_code);
     std::string result = GLSLtoGLSLES(glsl_code, glsl_type, essl_version, glsl_version, tmp_return_code);
     *return_code = tmp_return_code;
 
@@ -757,10 +756,82 @@ int get_or_add_glsl_version(std::string& glsl) {
 }
 
 std::string spirv_to_essl(std::vector<unsigned int> spirv, unsigned int essl_version, int& errc) {
-    return "";
+    spvc_context context = nullptr;
+    spvc_parsed_ir ir = nullptr;
+    spvc_compiler compiler_glsl = nullptr;
+    spvc_compiler_options options = nullptr;
+    spvc_resources resources = nullptr;
+    const spvc_reflected_resource* list = nullptr;
+    const char* result = nullptr;
+    size_t count;
+
+    const SpvId* p_spirv = spirv.data();
+    size_t word_count = spirv.size();
+
+    // LOGD("spirv_code.size(): %d", spirv.size())
+    spvc_context_create(&context);
+    spvc_context_parse_spirv(context, p_spirv, word_count, &ir);
+    spvc_context_create_compiler(context, SPVC_BACKEND_GLSL, ir, SPVC_CAPTURE_MODE_TAKE_OWNERSHIP, &compiler_glsl);
+    spvc_compiler_create_shader_resources(compiler_glsl, &resources);
+    spvc_resources_get_resource_list_for_type(resources, SPVC_RESOURCE_TYPE_UNIFORM_BUFFER, &list, &count);
+    spvc_compiler_create_compiler_options(compiler_glsl, &options);
+    spvc_compiler_options_set_uint(options, SPVC_COMPILER_OPTION_GLSL_VERSION,
+                                   essl_version >= 300 ? essl_version : 300);
+    spvc_compiler_options_set_bool(options, SPVC_COMPILER_OPTION_GLSL_ES, SPVC_TRUE);
+    spvc_compiler_install_compiler_options(compiler_glsl, options);
+    spvc_compiler_compile(compiler_glsl, &result);
+
+    if (!result) {
+        printf("Error: unexpected error in spirv-cross.");
+        errc = -1;
+        return "";
+    }
+
+    std::string essl = result;
+
+    spvc_context_destroy(context);
+
+    errc = 0;
+    return essl;
 }
 
 static bool glslang_inited = false;
 std::string GLSLtoGLSLES_2(const char* glsl_code, GLenum glsl_type, unsigned int essl_version, int& return_code) {
-    return "";
+    bool atomicCounterEmulated = false;
+    std::string correct_glsl_str = preprocess_glsl(glsl_code, glsl_type, &atomicCounterEmulated);
+    // LOGD("Firstly converted GLSL:\n%s", correct_glsl_str.c_str())
+    int glsl_version = get_or_add_glsl_version(correct_glsl_str);
+
+    if (!glslang_inited) {
+        glslang::InitializeProcess();
+        glslang_inited = true;
+    }
+    const char* s[] = {correct_glsl_str.c_str()};
+    int errc = 0;
+    std::vector<unsigned int> spirv_code = glsl_to_spirv(glsl_type, glsl_version, s, errc);
+    if (errc != 0) {
+        return_code = -1;
+        return "";
+    }
+    errc = 0;
+    std::string essl = spirv_to_essl(spirv_code, essl_version, errc);
+    if (errc != 0) {
+        return_code = -2;
+        return "";
+    }
+
+    // Post-processing ESSL
+
+    if (glsl_type != GL_COMPUTE_SHADER) {
+        essl = removeLayoutBinding(essl);
+    }
+    essl = processOutColorLocations(essl);
+    essl = forceSupporterOutput(essl);
+
+    // LOGD("Originally GLSL to GLSL ES Complete: \n%s", essl.c_str())
+    return_code = errc;
+    if (return_code == 0) {
+        return_code = atomicCounterEmulated ? 1 : 0;
+    }
+    return essl;
 }
