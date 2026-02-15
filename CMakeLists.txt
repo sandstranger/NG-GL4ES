@@ -31,6 +31,8 @@ set(SPIRV_CROSS_STATIC         ON  CACHE BOOL "Prefer static libs" FORCE)
 set(SPIRV_CROSS_ENABLE_UTIL    OFF  CACHE BOOL "Disable util" FORCE)
 set(ENABLE_PCH                 OFF  CACHE BOOL "Disable util" FORCE)
 
+add_definitions(-DNO_INIT_CONSTRUCTOR)
+
 add_subdirectory(3rdparty/glslang)
 add_subdirectory(3rdparty/SPIRV-Cross)
 
