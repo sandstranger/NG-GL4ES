@@ -767,7 +767,6 @@ void initialize_gl4es() {
     }*/
     globals4es.dxtmipmap = 1;//ReturnEnvVarInt("LIBGL_DXTMIPMAP");
 
-    globals4es.simple_shaderconv = 1;//ReturnEnvVarInt("LIBGL_SIMPLE_SHADERCONV");
     if (globals4es.simple_shaderconv == 1) SHUT_LOGD("Using simple/custom shaderconn");
     if (globals4es.simple_shaderconv == 2) SHUT_LOGD("Using simple/custom shaderconv with float hack");
 
@@ -806,6 +805,11 @@ void initialize_gl4es() {
     if (GetEnvVarFloat("LIBGL_FB_TEX_SCALE", &globals4es.fbtexscale, 0.0f)) {
         SHUT_LOGD("Framebuffer Textures will be scaled by %.2f", globals4es.fbtexscale);
     }
+}
+
+__attribute__((used)) __attribute__((visibility("default")))
+void updateSimpleShaderConvState(int shaderConvState){
+    globals4es.simple_shaderconv = shaderConvState;
 }
 
 #ifndef NOX11
