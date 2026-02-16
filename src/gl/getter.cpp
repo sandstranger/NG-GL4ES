@@ -175,7 +175,8 @@ extern "C"
                    "GL_ARB_draw_buffers_blend "
                    "GL_ARB_shader_image_load_store "
                    "GL_EXT_shader_image_load_store "
-                   //"GL_ARB_separate_shader_objects "
+                   "GL_ARB_separate_shader_objects "
+                   "GL_ARB_vertex_attrib_binding "
                    //                "GL_EXT_blend_logic_op "
             );
             if (!globals4es.notexrect) strcat(extensions, "GL_ARB_texture_rectangle ");
