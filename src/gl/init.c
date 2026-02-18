@@ -26,6 +26,8 @@
 #include "envvars.h"
 #include "config.h"
 
+static int simpleShaderConvState = 1;
+
 #if defined(__EMSCRIPTEN__)
 #define NO_INIT_CONSTRUCTOR
 #endif
@@ -765,6 +767,7 @@ void initialize_gl4es() {
         globals4es.dxt = 0;
     	  break;
     }*/
+    globals4es.simple_shaderconv = simpleShaderConvState;
     globals4es.dxtmipmap = 1;//ReturnEnvVarInt("LIBGL_DXTMIPMAP");
 
     if (globals4es.simple_shaderconv == 1) SHUT_LOGD("Using simple/custom shaderconn");
@@ -809,7 +812,7 @@ void initialize_gl4es() {
 
 __attribute__((used)) __attribute__((visibility("default")))
 void updateSimpleShaderConvState(int shaderConvState){
-    globals4es.simple_shaderconv = shaderConvState;
+    simpleShaderConvState = shaderConvState;
 }
 
 #ifndef NOX11
