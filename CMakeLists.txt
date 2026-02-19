@@ -38,10 +38,10 @@ add_subdirectory(3rdparty/SPIRV-Cross)
 
 enable_language(CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
@@ -179,6 +179,3 @@ target_include_directories(ng_gl4es PUBLIC
     ${CMAKE_SOURCE_DIR}/include
 )
 
-set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES
-    LINK_FLAGS "-Wl,--strip-all"
-)
