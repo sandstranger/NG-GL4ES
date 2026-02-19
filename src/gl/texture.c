@@ -33,6 +33,7 @@
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #endif
+#include "GL/gl.h"
 
 // expand non-power-of-two sizes
 // TODO: what does this do to repeating textures?
@@ -1914,9 +1915,27 @@ void APIENTRY_GL4ES gl4es_glTexStorage2D(GLenum target, GLsizei levels, GLenum i
               internalformat == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT) &&
              !globals4es.avoid16bits)
         gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RGBA, GL_UNSIGNED_SHORT_4_4_4_4, NULL);
-    else
-        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-
+    else if (internalformat == GL_DEPTH24_STENCIL8){
+        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
+    } else if (internalformat == GL_R32F) {
+        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RED, GL_FLOAT,NULL);
+    }
+     else if (internalformat == GL_R32F) {
+        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RED, GL_FLOAT,NULL);
+    }
+     else if (internalformat == GL_RG16 || internalformat == GL_RG16F) {
+        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RG, GL_UNSIGNED_BYTE,NULL);
+    }
+     else if (internalformat == GL_R8) {
+        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RED, GL_UNSIGNED_BYTE,NULL);
+    }
+     else if (internalformat == GL_RGBA32F) {
+        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RGBA, GL_FLOAT,NULL);
+    }
+    else {
+        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                           NULL);
+    }
     int mlevel = maxlevel(width, height);
     gltexture_t* bound = gl4es_getCurrentTexture(target);
     if (levels > 1 && isDXTc(internalformat)) {
