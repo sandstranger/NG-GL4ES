@@ -1920,9 +1920,6 @@ void APIENTRY_GL4ES gl4es_glTexStorage2D(GLenum target, GLsizei levels, GLenum i
     } else if (internalformat == GL_R32F) {
         gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RED, GL_FLOAT,NULL);
     }
-     else if (internalformat == GL_R32F) {
-        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RED, GL_FLOAT,NULL);
-    }
      else if (internalformat == GL_RG16 || internalformat == GL_RG16F) {
         gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RG, GL_UNSIGNED_BYTE,NULL);
     }
