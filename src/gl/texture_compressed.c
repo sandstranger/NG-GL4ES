@@ -217,7 +217,7 @@ GLvoid *compressDXTc(GLsizei width, GLsizei height, GLenum format, const GLvoid 
 }
 
 
-void gl4es_glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei width,
+void APIENTRY_GL4ES gl4es_glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei width,
                                                  GLsizei height, GLint border, GLsizei imageSize, const GLvoid* data) {
 
     if(!data) return;
@@ -477,7 +477,7 @@ void gl4es_glCompressedTexImage2D(GLenum target, GLint level, GLenum internalfor
     glstate->vao->unpack = unpack;
 }
 
-void gl4es_glCompressedTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
+void APIENTRY_GL4ES gl4es_glCompressedTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
                                                     GLsizei width, GLsizei height, GLenum format, GLsizei imageSize,
                                                     const GLvoid* data) {
     const GLuint itarget = what_target(target);
@@ -545,7 +545,7 @@ void gl4es_glCompressedTexSubImage2D(GLenum target, GLint level, GLint xoffset, 
     }
 }
 
-void gl4es_glGetCompressedTexImage(GLenum target, GLint lod, GLvoid* img) {
+void APIENTRY_GL4ES gl4es_glGetCompressedTexImage(GLenum target, GLint lod, GLvoid* img) {
     // FLUSH_BEGINEND;   //no need on get
 
     const GLuint itarget = what_target(target);
@@ -603,25 +603,25 @@ void gl4es_glGetCompressedTexImage(GLenum target, GLint lod, GLvoid* img) {
     return;
 }
 
-void gl4es_glCompressedTexImage1D(GLenum target, GLint level, GLenum internalformat, GLsizei width,
+void APIENTRY_GL4ES gl4es_glCompressedTexImage1D(GLenum target, GLint level, GLenum internalformat, GLsizei width,
                                                  GLint border, GLsizei imageSize, const GLvoid* data) {
 
     gl4es_glCompressedTexImage2D(target, level, internalformat, width, 1, border, imageSize, data);
 }
 
-void gl4es_glCompressedTexImage3D(GLenum target, GLint level, GLenum internalformat, GLsizei width,
+void APIENTRY_GL4ES gl4es_glCompressedTexImage3D(GLenum target, GLint level, GLenum internalformat, GLsizei width,
                                                  GLsizei height, GLsizei depth, GLint border, GLsizei imageSize,
                                                  const GLvoid* data) {
 
     gl4es_glCompressedTexImage2D(target, level, internalformat, width, height, border, imageSize, data);
 }
 
-void gl4es_glCompressedTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width,
+void APIENTRY_GL4ES gl4es_glCompressedTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width,
                                                     GLenum format, GLsizei imageSize, const GLvoid* data) {
 
     gl4es_glCompressedTexSubImage2D(target, level, xoffset, 0, width, 1, format, imageSize, data);
 }
-void gl4es_glCompressedTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
+void APIENTRY_GL4ES gl4es_glCompressedTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
                                                     GLint zoffset, GLsizei width, GLsizei height, GLsizei depth,
                                                     GLenum format, GLsizei imageSize, const GLvoid* data) {
 

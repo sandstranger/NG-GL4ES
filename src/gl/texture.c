@@ -731,7 +731,7 @@ GLenum swizzle_internalformat(GLenum* internalformat, GLenum format, GLenum type
         break;
     case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
     case GL_COMPRESSED_SRGB_S3TC_DXT1_EXT: // should be sRGB...
-        ret = GL_COMPRESSED_RGB;
+        ret = GL_RGB;
         sret = GL_RGB;
         break;
     case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT: // not good...
@@ -740,7 +740,7 @@ GLenum swizzle_internalformat(GLenum* internalformat, GLenum format, GLenum type
     case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT:
     case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT:
     case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT:
-        ret = GL_COMPRESSED_RGBA;
+        ret = GL_RGBA;
         sret = GL_RGBA;
         break;
     case GL_BGRA8_EXT:
@@ -1902,32 +1902,36 @@ void APIENTRY_GL4ES gl4es_glTexStorage2D(GLenum target, GLsizei levels, GLenum i
         noerrorShim();
         return;
     }
-    if ((internalformat == GL_COMPRESSED_RGB_S3TC_DXT1_EXT || internalformat == GL_COMPRESSED_SRGB_S3TC_DXT1_EXT) &&
-        !globals4es.avoid16bits)
-        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, NULL);
+    if ((internalformat == GL_COMPRESSED_RGB_S3TC_DXT1_EXT || internalformat == GL_COMPRESSED_SRGB_S3TC_DXT1_EXT)) {
+        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RGB,
+                           GL_RGB5_A1, NULL);
+    }
     else if (((internalformat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT ||
-               internalformat == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT)) &&
-             !globals4es.avoid16bits)
-        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1, NULL);
+               internalformat == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT))) {
+        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RGBA,
+                           GL_RGB5_A1, NULL);
+    }
     else if ((internalformat == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT ||
               internalformat == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT ||
               internalformat == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT ||
-              internalformat == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT) &&
-             !globals4es.avoid16bits)
-        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RGBA, GL_UNSIGNED_SHORT_4_4_4_4, NULL);
+              internalformat == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT))
+        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RGBA, GL_RGBA4, NULL);
     else if (internalformat == GL_DEPTH24_STENCIL8){
         gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
     } else if (internalformat == GL_R32F) {
-        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RED, GL_FLOAT,NULL);
+        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RED, (hardext.floattex) ? GL_FLOAT : GL_UNSIGNED_BYTE,NULL);
     }
-     else if (internalformat == GL_RG16 || internalformat == GL_RG16F) {
+     else if (internalformat == GL_RG16) {
         gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RG, GL_UNSIGNED_BYTE,NULL);
+    }
+     else if (internalformat == GL_RG16F) {
+        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RG, (hardext.halffloattex) ? GL_HALF_FLOAT_OES : GL_UNSIGNED_BYTE,NULL);
     }
      else if (internalformat == GL_R8) {
         gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RED, GL_UNSIGNED_BYTE,NULL);
     }
      else if (internalformat == GL_RGBA32F) {
-        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RGBA, GL_FLOAT,NULL);
+        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RGBA, (hardext.floattex) ? GL_FLOAT : GL_UNSIGNED_BYTE,NULL);
     }
     else {
         gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
