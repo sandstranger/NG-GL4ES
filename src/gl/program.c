@@ -21,6 +21,8 @@
 #define DBG(a)
 #endif
 
+extern bool g_isOpenXrayActive;
+
 // KH Map implementations
 KHASH_MAP_IMPL_INT(attribloclist, attribloc_t*);
 KHASH_MAP_IMPL_INT(uniformlist, uniform_t*);
@@ -901,7 +903,16 @@ void APIENTRY_GL4ES gl4es_glLinkProgram(GLuint program) {
             memcpy(glprogram->default_need, &needs, sizeof(shaderconv_need_t));
             glprogram->default_fragment = 1;
             GLenum vtx = gl4es_glCreateShader(GL_FRAGMENT_SHADER);
-            gl4es_glShaderSource(vtx, 1, fpe_FragmentShader(&needs, NULL), NULL);
+
+            if (g_isOpenXrayActive){
+                char buff[1024];
+                sprintf(buff, "layout(location = 0) out vec4 SV_Target;\nvoid main()\n{\n}");
+                const char* strings[1] = { buff };
+                gl4es_glShaderSource(vtx, 1, strings, NULL);
+            } else {
+                gl4es_glShaderSource(vtx, 1, fpe_FragmentShader(&needs, NULL), NULL);
+            }
+
             gl4es_glCompileShader(vtx);
             gl4es_glAttachShader(glprogram->id, vtx);
         }
