@@ -26,8 +26,7 @@
 #include "envvars.h"
 #include "config.h"
 
-static int simpleShaderConvState = 1;
-bool g_isOpenXrayActive = false;
+int simpleShaderConvState = 1;
 
 #if defined(__EMSCRIPTEN__)
 #define NO_INIT_CONSTRUCTOR
@@ -814,10 +813,6 @@ void initialize_gl4es() {
 __attribute__((used)) __attribute__((visibility("default")))
 void updateSimpleShaderConvState(int shaderConvState){
     simpleShaderConvState = shaderConvState;
-}
-__attribute__((used)) __attribute__((visibility("default")))
-void setIsOpenXrayActive (bool isOpenXrayActive){
-    g_isOpenXrayActive = isOpenXrayActive;
 }
 
 #ifndef NOX11

@@ -21,7 +21,7 @@
 #define DBG(a)
 #endif
 
-extern bool g_isOpenXrayActive;
+extern int simpleShaderConvState;
 
 // KH Map implementations
 KHASH_MAP_IMPL_INT(attribloclist, attribloc_t*);
@@ -904,7 +904,7 @@ void APIENTRY_GL4ES gl4es_glLinkProgram(GLuint program) {
             glprogram->default_fragment = 1;
             GLenum vtx = gl4es_glCreateShader(GL_FRAGMENT_SHADER);
 
-            if (g_isOpenXrayActive){
+            if (simpleShaderConvState < 1){
                 char buff[1024];
                 sprintf(buff, "layout(location = 0) out vec4 SV_Target;\nvoid main()\n{\n}");
                 const char* strings[1] = { buff };
