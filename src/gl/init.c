@@ -531,13 +531,15 @@ void initialize_gl4es() {
         }
     }
 
-    if (GetEnvVarBool("LIBGL_AVOID16BITS", &globals4es.avoid16bits, (hardext.vendor & VEND_IMGTEC) ? 0 : 1)) {
+    globals4es.avoid16bits = 1;
+
+/*    if (GetEnvVarBool("LIBGL_AVOID16BITS", &globals4es.avoid16bits, (hardext.vendor & VEND_IMGTEC) ? 0 : 1)) {
         if (globals4es.avoid16bits) {
             SHUT_LOGD("Avoid 16bits textures");
         } else {
             SHUT_LOGD("Don't avoid 16bits textures");
         }
-    }
+    }*/
 
     if (GetEnvVarInt("LIBGL_AVOID24BITS", &globals4es.avoid24bits, 0)) {
         switch (globals4es.avoid24bits) {

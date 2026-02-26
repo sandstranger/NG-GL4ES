@@ -906,7 +906,11 @@ void APIENTRY_GL4ES gl4es_glLinkProgram(GLuint program) {
 
             if (simpleShaderConvState < 1){
                 char buff[1024];
-                sprintf(buff, "layout(location = 0) out vec4 SV_Target;\nvoid main()\n{\n}");
+                sprintf(buff, "#version 320 es\n"
+                              "precision highp float;\n"
+                              "precision highp int;\n"
+                              "layout(location = 0) out vec4 SV_Target;\n"
+                              "void main()\n{\n}");
                 const char* strings[1] = { buff };
                 gl4es_glShaderSource(vtx, 1, strings, NULL);
             } else {

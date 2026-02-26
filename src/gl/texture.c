@@ -144,7 +144,7 @@ void internal2format_type(GLenum* internalformat, GLenum* format, GLenum* type) 
     case GL_RGB5:
     case GL_RGB565:
         *format = GL_RGB;
-        *type = GL_UNSIGNED_SHORT_5_6_5;
+        *type = GL_UNSIGNED_BYTE;
         break;
     case GL_RGB:
         if (globals4es.avoid24bits)
@@ -232,6 +232,7 @@ void internal2format_type(GLenum* internalformat, GLenum* format, GLenum* type) 
 static void* swizzle_texture(GLsizei width, GLsizei height, GLenum* format, GLenum* type, GLenum intermediaryformat,
                              GLenum internalformat, const GLvoid* data, gltexture_t* bound) {
     if (format && *format == GL_BGRA8_EXT) *format = GL_BGRA;
+    if (intermediaryformat == GL_RGB565) *format = GL_RGB565;
     int convert = 0;
     GLenum dest_format = GL_RGBA;
     GLenum dest_type = GL_UNSIGNED_BYTE;
@@ -351,7 +352,7 @@ static void* swizzle_texture(GLsizei width, GLsizei height, GLenum* format, GLen
         case GL_RGB5:
         case GL_RGB565:
             dest_format = GL_RGB;
-            dest_type = GL_UNSIGNED_SHORT_5_6_5;
+            dest_type = GL_UNSIGNED_BYTE;
             convert = 1;
             check = 0;
             break;
@@ -622,7 +623,7 @@ GLenum swizzle_internalformat(GLenum* internalformat, GLenum format, GLenum type
             sret = GL_RG;
         break;
     case GL_RGB565:
-        ret = GL_RGB5;
+        ret = sret = GL_RGB8;
     case GL_RGB5:
         sret = GL_RGB5;
         break;
@@ -1893,71 +1894,117 @@ void APIENTRY_GL4ES gl4es_glTexStorage1D(GLenum target, GLsizei levels, GLenum i
     DBG(DBGLOGD("glTexStorage1D(%s, %d, %s, %d)\n", PrintEnum(target), levels, PrintEnum(internalformat), width);)
     gl4es_glTexImage1D(target, 0, internalformat, width, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 }
+
 void APIENTRY_GL4ES gl4es_glTexStorage2D(GLenum target, GLsizei levels, GLenum internalformat, GLsizei width,
                                          GLsizei height) {
-    // (could be implemented in GLES3.0)
     DBG(DBGLOGD("glTexStorage2D(%s, %d, %s, %d, %d)\n", PrintEnum(target), levels, PrintEnum(internalformat), width,
                 height);)
     if (!levels) {
         noerrorShim();
         return;
     }
+
+    int is_cube = (target == GL_TEXTURE_CUBE_MAP);
+    if (is_cube && width != height) {
+        errorShim(GL_INVALID_VALUE);
+        return;
+    }
+
+    static const GLenum cube_faces[6] = {
+            GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+            GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+            GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+            GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+            GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+            GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
+    };
+
+#define TEX_IMAGE_LEVEL0(internalformat, width, height, format, type) \
+        do { \
+            if (is_cube) { \
+                for (int f = 0; f < 6; ++f) \
+                    gl4es_glTexImage2D(cube_faces[f], 0, internalformat, width, height, 0, format, type, NULL); \
+            } else { \
+                gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, format, type, NULL); \
+            } \
+        } while (0)
+
     if ((internalformat == GL_COMPRESSED_RGB_S3TC_DXT1_EXT || internalformat == GL_COMPRESSED_SRGB_S3TC_DXT1_EXT)) {
-        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RGB,
-                           GL_RGB5_A1, NULL);
+        TEX_IMAGE_LEVEL0(internalformat, width, height, GL_RGB, GL_UNSIGNED_BYTE);
     }
-    else if (((internalformat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT ||
-               internalformat == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT))) {
-        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RGBA,
-                           GL_RGB5_A1, NULL);
+    else if ((internalformat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT || internalformat == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT)) {
+        TEX_IMAGE_LEVEL0(internalformat, width, height, GL_RGBA, GL_UNSIGNED_BYTE);
     }
-    else if ((internalformat == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT ||
-              internalformat == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT ||
-              internalformat == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT ||
-              internalformat == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT))
-        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RGBA, GL_RGBA4, NULL);
-    else if (internalformat == GL_DEPTH24_STENCIL8){
-        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
-    } else if (internalformat == GL_R32F) {
-        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RED, (hardext.floattex) ? GL_FLOAT : GL_UNSIGNED_BYTE,NULL);
+    else if ((internalformat == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT || internalformat == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT ||
+              internalformat == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT || internalformat == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT)) {
+        TEX_IMAGE_LEVEL0(internalformat, width, height, GL_RGBA, GL_UNSIGNED_BYTE);
     }
-     else if (internalformat == GL_RG16) {
-        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RG, GL_UNSIGNED_BYTE,NULL);
+    else if (internalformat == GL_DEPTH24_STENCIL8) {
+        TEX_IMAGE_LEVEL0(internalformat, width, height, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8);
     }
-     else if (internalformat == GL_RG16F) {
-        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RG, (hardext.halffloattex) ? GL_HALF_FLOAT_OES : GL_UNSIGNED_BYTE,NULL);
+    else if (internalformat == GL_R32F) {
+        GLenum type = (hardext.floattex) ? GL_FLOAT : GL_UNSIGNED_BYTE;
+        TEX_IMAGE_LEVEL0(internalformat, width, height, GL_RED, type);
     }
-     else if (internalformat == GL_R8) {
-        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RED, GL_UNSIGNED_BYTE,NULL);
+    else if (internalformat == GL_RG16 || internalformat == GL_RG8) {
+        TEX_IMAGE_LEVEL0(internalformat, width, height, GL_RG, GL_UNSIGNED_BYTE);
     }
-     else if (internalformat == GL_RGBA32F) {
-        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RGBA, (hardext.floattex) ? GL_FLOAT : GL_UNSIGNED_BYTE,NULL);
+    else if (internalformat == GL_RG16F) {
+        GLenum type = (hardext.halffloattex) ? GL_HALF_FLOAT_OES : GL_UNSIGNED_BYTE;
+        TEX_IMAGE_LEVEL0(internalformat, width, height, GL_RG, type);
+    }
+    else if (internalformat == GL_R8) {
+        TEX_IMAGE_LEVEL0(internalformat, width, height, GL_RED, GL_UNSIGNED_BYTE);
+    }
+    else if (internalformat == GL_RGB565) {
+        TEX_IMAGE_LEVEL0(internalformat, width, height, GL_RGB565, GL_UNSIGNED_BYTE);
+    }
+    else if (internalformat == GL_RGBA32F) {
+        GLenum type = (hardext.floattex) ? GL_FLOAT : GL_UNSIGNED_BYTE;
+        TEX_IMAGE_LEVEL0(internalformat, width, height, GL_RGBA, type);
     }
     else {
-        gl4es_glTexImage2D(target, 0, internalformat, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                           NULL);
+        // По умолчанию
+        TEX_IMAGE_LEVEL0(internalformat, width, height, GL_RGBA, GL_UNSIGNED_BYTE);
     }
-    int mlevel = maxlevel(width, height);
+
     gltexture_t* bound = gl4es_getCurrentTexture(target);
+    int mlevel = maxlevel(width, height);
+
     if (levels > 1 && isDXTc(internalformat)) {
-        // no mipmap will be uploaded, but they will be calculated from level 0
         bound->mipmap_need = 1;
         bound->mipmap_auto = 1;
-        for (int i = 1; i <= mlevel; ++i)
-            gl4es_glTexImage2D(target, i, internalformat, nlevel(width, i), nlevel(height, i), 0, bound->format,
-                               bound->type, NULL);
+        for (int i = 1; i <= mlevel; ++i) {
+            GLsizei w = nlevel(width, i);
+            GLsizei h = nlevel(height, i);
+            // Для каждого уровня вызываем для всех граней (если куб)
+            if (is_cube) {
+                for (int f = 0; f < 6; ++f)
+                    gl4es_glTexImage2D(cube_faces[f], i, internalformat, w, h, 0, bound->format, bound->type, NULL);
+            } else {
+                gl4es_glTexImage2D(target, i, internalformat, w, h, 0, bound->format, bound->type, NULL);
+            }
+        }
         noerrorShim();
         return;
     }
-    // no more compressed format here...
+
     if (mlevel > levels - 1) {
         bound->max_level = levels - 1;
-        if (levels > 1 && GL4ES_AUTOMIPMAP_PLACEHOLDER != 3) bound->mipmap_need = 1;
+        if (levels > 1 && GL4ES_AUTOMIPMAP_PLACEHOLDER != 3)
+            bound->mipmap_need = 1;
     }
 
-    for (int i = 1; i < levels; ++i)
-        gl4es_glTexImage2D(target, i, internalformat, nlevel(width, i), nlevel(height, i), 0, bound->format,
-                           bound->type, NULL);
+    for (int i = 1; i < levels; ++i) {
+        GLsizei w = nlevel(width, i);
+        GLsizei h = nlevel(height, i);
+        if (is_cube) {
+            for (int f = 0; f < 6; ++f)
+                gl4es_glTexImage2D(cube_faces[f], i, internalformat, w, h, 0, bound->format, bound->type, NULL);
+        } else {
+            gl4es_glTexImage2D(target, i, internalformat, w, h, 0, bound->format, bound->type, NULL);
+        }
+    }
 
     noerrorShim();
 }
