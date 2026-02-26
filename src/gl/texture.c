@@ -1964,7 +1964,6 @@ void APIENTRY_GL4ES gl4es_glTexStorage2D(GLenum target, GLsizei levels, GLenum i
         TEX_IMAGE_LEVEL0(internalformat, width, height, GL_RGBA, type);
     }
     else {
-        // По умолчанию
         TEX_IMAGE_LEVEL0(internalformat, width, height, GL_RGBA, GL_UNSIGNED_BYTE);
     }
 
@@ -1977,7 +1976,6 @@ void APIENTRY_GL4ES gl4es_glTexStorage2D(GLenum target, GLsizei levels, GLenum i
         for (int i = 1; i <= mlevel; ++i) {
             GLsizei w = nlevel(width, i);
             GLsizei h = nlevel(height, i);
-            // Для каждого уровня вызываем для всех граней (если куб)
             if (is_cube) {
                 for (int f = 0; f < 6; ++f)
                     gl4es_glTexImage2D(cube_faces[f], i, internalformat, w, h, 0, bound->format, bound->type, NULL);
