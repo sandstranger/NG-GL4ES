@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.10)
 
 project(ng_gl4es)
 
+if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+   add_compile_options(-ffunction-sections -fdata-sections)
+   add_link_options(-Wl,--gc-sections)
+endif()
+
+
 set(ENABLE_RTTI                ON  CACHE BOOL "Enables RTTI (will be took by glslang)" FORCE)
 set(ENABLE_HLSL                OFF CACHE BOOL "Disable HLSL input for glslang" FORCE)
 set(BUILD_EXTERNAL             OFF CACHE BOOL "Disable build external dependencies for glslang" FORCE)
@@ -35,7 +41,9 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -DNO_GBM -DDEFAULT_ES=3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -DNO_GBM -DDEFAULT_ES=3 -fvisibility=hidden")
 
 if(ANDROID)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNOX11")
