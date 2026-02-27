@@ -625,7 +625,53 @@ void APIENTRY_GL4ES gl4es_glCompressedTexSubImage3D(GLenum target, GLint level, 
                                                     GLint zoffset, GLsizei width, GLsizei height, GLsizei depth,
                                                     GLenum format, GLsizei imageSize, const GLvoid* data) {
 
-    gl4es_glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, imageSize, data);
+    gltexture_t* bound = gl4es_getCurrentTexture(target);
+    DBG(SHUT_LOGD("glCompressedTexSubImage2D with unpack_row_length(%i), level=%d, size(%i,%i), pos(%i,%i) and "
+                  "skip={%i,%i}, internalformat=%s, imagesize=%i, data=%p, bound=%p, bound:%s/%s\n",
+                  glstate->texture.unpack_row_length, level, width, height, xoffset, yoffset,
+                  glstate->texture.unpack_skip_pixels, glstate->texture.unpack_skip_rows, PrintEnum(format), imageSize,
+                  data, bound, bound ? PrintEnum(bound->format) : "nil", bound ? PrintEnum(bound->type) : "nil");)
+    glbuffer_t* unpack = glstate->vao->unpack;
+    glstate->vao->unpack = NULL;
+    GLvoid* datab = (GLvoid*)data;
+    if (unpack) datab += (uintptr_t)unpack->data;
+    LOAD_GLES3(glCompressedTexSubImage3D);
+    errorGL();
+    int simpleAlpha = 0;
+    int complexAlpha = 0;
+    int transparent0 = (format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT || format == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT) ? 1 : 0;
+    if ((!isFormatSupported(format) && isDXTc(format)) || (globals4es.dxt == 1 && isDXTc(format))) {
+        if (level) {
+            noerrorShim();
+            return;
+        }
+        int srgb = isDXTcSRGB(format);
+        GLvoid* pixels;
+        if ((width & 3) || (height & 3)) { // can happens :(
+            GLvoid* tmp;
+            GLsizei nw = width;
+            GLsizei nh = height;
+            if (nw < 4) nw = 4;
+            if (nh < 4) nh = 4;
+            tmp = uncompressDXTc(nw, nh, format, imageSize, transparent0, &simpleAlpha, &complexAlpha, datab);
+            pixels = malloc(4 * width * height);
+            // crop
+            for (int y = 0; y < height; y++)
+                memcpy(pixels + y * width * 4, tmp + y * nw * 4, width * 4);
+            free(tmp);
+        } else {
+            pixels = uncompressDXTc(width, height, format, imageSize, transparent0, &simpleAlpha, &complexAlpha, datab);
+        }
+        if (srgb) pixel_srgb_inplace(pixels, width, height);
+        GLvoid* half = pixels;
+        DBG(SHUT_LOGD(" [%d] => (Alpha=%d/%d), %dx%d %s/%s\n\n", bound->glname, simpleAlpha, complexAlpha, width,
+                      height, PrintEnum(bound->format), PrintEnum(bound->type));)
+        gl4es_glTexSubImage3D(target, level, xoffset, yoffset,zoffset, width, height,depth, GL_RGBA, GL_UNSIGNED_BYTE, half);
+        if (half != pixels) free(half);
+        if (pixels != datab) free(pixels);
+    } else {
+        gles_glCompressedTexSubImage3D(target, level, xoffset, yoffset,zoffset, width, height,depth, format, imageSize, datab);
+    }
 }
 
 // Direct wrapper

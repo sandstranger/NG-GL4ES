@@ -17,6 +17,7 @@ extern "C" {
 #define GL_TEXTURE_1D               0x0DE0
 #define GL_TEXTURE_2D               0x0DE1
 #define GL_TEXTURE_3D               0x806F
+#define GL_TEXTURE_CUBE_MAP_ARRAY   0x9009
 #define GL_TEXTURE_WRAP_S           0x2802
 #define GL_TEXTURE_WRAP_T           0x2803
 #define GL_TEXTURE_WRAP_R           0x8072

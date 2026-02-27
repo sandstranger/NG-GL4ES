@@ -458,80 +458,47 @@ void APIENTRY_GL4ES gl4es_glTexSubImage3D(GLenum target, GLint level, GLint xoff
         return;
     }
 
+    extern void* rgb565_to_rgba8(int width, int height, const void* data);
+
+    gltexture_t* bound = gl4es_getCurrentTexture(target);
+
+    bool isRGB565 = bound->internalformat == GL_RGB565;
+    GLvoid* rgb565Pixels = nullptr;
+
+    if (isRGB565) {
+        format = GL_RGBA;
+        type = GL_UNSIGNED_BYTE;
+        data = rgb565Pixels = rgb565_to_rgba8(width, height,data);
+    }
+
+    if (bound->wanted_internal == GL_RGBA8) {
+        format = GL_RGBA;
+        type = GL_UNSIGNED_BYTE;
+    } else if (bound->wanted_internal == GL_RGB8){
+        format = GL_RGB;
+        type = GL_UNSIGNED_BYTE;
+    }
+
     if (glstate->list.pending) {
         gl4es_flush();
     } else {
         PUSH_IF_COMPILING(glTexSubImage3D);
     }
 
-    realize_bound(glstate->texture.active, target);
-
     if (!data) {
         DBG(SHUT_LOGD("LIBGL: glTexSubImage3D called with NULL data\n");)
         return;
     }
-    int pixelSize = pixel_sizeof(format, type);
-    if (pixelSize <= 0) {
-        DBG(SHUT_LOGD("LIBGL: invalid pixel size (format/type) in glTexSubImage3D\n");)
-        return;
-    }
-
-    const GLubyte* pixels_src = (const GLubyte*)data;
-    GLubyte* temp_pixels = NULL;
-
-    if (glstate->texture.unpack_row_length != 0 || glstate->texture.unpack_skip_pixels != 0 ||
-        glstate->texture.unpack_skip_rows != 0 || glstate->texture.unpack_align != 4 ||
-        glstate->texture.unpack_image_height != 0) {
-
-        size_t ui_width = (size_t)width;
-        size_t ui_height = (size_t)height;
-        size_t ui_depth = (size_t)depth;
-        size_t up_row_pixels =
-            (glstate->texture.unpack_row_length ? (size_t)glstate->texture.unpack_row_length : ui_width);
-        size_t up_img_height =
-            (glstate->texture.unpack_image_height ? (size_t)glstate->texture.unpack_image_height : ui_height);
-        GLint up_align = glstate->texture.unpack_align;
-        if (up_align <= 0) up_align = 1;
-
-        size_t src_row_raw = up_row_pixels * (size_t)pixelSize;
-        size_t src_row_bytes = pad_to(src_row_raw, up_align);
-        size_t src_img_bytes = up_img_height * src_row_bytes;
-
-        size_t dst_row_bytes = ui_width * (size_t)pixelSize;
-        size_t dst_img_bytes = dst_row_bytes * ui_height;
-        size_t total_dst = dst_img_bytes * ui_depth;
-
-        size_t skip_pixels = (size_t)glstate->texture.unpack_skip_pixels;
-        size_t skip_rows = (size_t)glstate->texture.unpack_skip_rows;
-        size_t skip_pixels_bytes = skip_pixels * (size_t)pixelSize;
-        size_t skip_rows_bytes = skip_rows * src_row_bytes;
-
-        temp_pixels = (GLubyte*)malloc(total_dst);
-        if (!temp_pixels) {
-            DBG(SHUT_LOGD("LIBGL: malloc failed in glTexSubImage3D (bytes=%zu)\n", total_dst));
-            return;
-        }
-
-        const GLubyte* src_base = (const GLubyte*)pixels_src;
-        for (size_t z = 0; z < ui_depth; ++z) {
-            const GLubyte* src_slice = src_base + z * src_img_bytes + skip_rows_bytes + skip_pixels_bytes;
-            GLubyte* dst_slice = temp_pixels + z * dst_img_bytes;
-            for (size_t y = 0; y < ui_height; ++y) {
-                const GLubyte* src_row = src_slice + y * src_row_bytes;
-                GLubyte* dst_row = dst_slice + y * dst_row_bytes;
-                memcpy(dst_row, src_row, dst_row_bytes);
-            }
-        }
-
-        pixels_src = (const GLubyte*)temp_pixels;
-    }
 
     LOAD_GLES3(glTexSubImage3D);
     gles_glTexSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type,
-                         (const GLvoid*)pixels_src);
+                         (const GLvoid*)data);
 
-    if (temp_pixels) free(temp_pixels);
+    if (rgb565Pixels){
+        free(rgb565Pixels);
+    }
 }
+
 
 void APIENTRY_GL4ES gl4es_glTexStorage3D(GLenum target, GLsizei levels, GLenum internalformat, GLsizei width,
                                          GLsizei height, GLsizei depth) {
@@ -541,51 +508,39 @@ void APIENTRY_GL4ES gl4es_glTexStorage3D(GLenum target, GLsizei levels, GLenum i
         noerrorShim();
         return;
     }
-    if ((internalformat == GL_COMPRESSED_RGB_S3TC_DXT1_EXT || internalformat == GL_COMPRESSED_SRGB_S3TC_DXT1_EXT))
-        gl4es_glTexImage3D(target, 0, internalformat, width, height, depth, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    else if (((internalformat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT ||
-               internalformat == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT)))
-        gl4es_glTexImage3D(target, 0, internalformat, width, height, depth, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                           NULL);
-    else if ((internalformat == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT ||
-              internalformat == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT ||
-              internalformat == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT ||
-              internalformat == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT))
-        gl4es_glTexImage3D(target, 0, internalformat, width, height, depth, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                           NULL);
-    else if (internalformat == GL_DEPTH24_STENCIL8){
-        gl4es_glTexImage3D(target, 0, internalformat, width, height,depth, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
-    } else if (internalformat == GL_R32F) {
-        gl4es_glTexImage3D(target, 0, internalformat, width, height,depth, 0, GL_RED, (hardext.floattex) ? GL_FLOAT : GL_UNSIGNED_BYTE,NULL);
+
+    GLenum wanted_internalformat = GL_RGBA8;
+
+    if (internalformat == GL_COMPRESSED_RGB_S3TC_DXT1_EXT || internalformat == GL_COMPRESSED_SRGB_S3TC_DXT1_EXT){
+        wanted_internalformat = GL_RGB8;
+    } else if (internalformat == GL_DEPTH24_STENCIL8 || internalformat == GL_RG16 ||internalformat == GL_RG8 ||
+            internalformat == GL_R32F || internalformat == GL_RG16F || internalformat == GL_R8 ||
+            internalformat == GL_RGBA32F || internalformat == GL_RGBA16F){
+        wanted_internalformat = internalformat;
     }
-    else if (internalformat == GL_RG16 || internalformat == GL_RG8) {
-        LOGD("glTexStorage3D(%s, %d, %s, %d, %d, %d)\n", PrintEnum(target), levels, PrintEnum(internalformat),
-             width, height, depth);
-        gl4es_glTexImage3D(target, 0, internalformat, width, height,depth, 0, GL_RG, GL_UNSIGNED_BYTE,NULL);
-    }
-    else if (internalformat == GL_RG16F) {
-        gl4es_glTexImage3D(target, 0, internalformat, width, height,depth, 0, GL_RG, (hardext.halffloattex) ? GL_HALF_FLOAT_OES : GL_UNSIGNED_BYTE,NULL);
-    }
-    else if (internalformat == GL_R8) {
-        gl4es_glTexImage3D(target, 0, internalformat, width, height,depth, 0, GL_RED, GL_UNSIGNED_BYTE,NULL);
-    }
-    else if (internalformat == GL_RGBA32F) {
-        gl4es_glTexImage3D(target, 0, internalformat, width, height,depth, 0, GL_RGBA, (hardext.floattex) ? GL_FLOAT : GL_UNSIGNED_BYTE,NULL);
-    }
-    else {
-        gl4es_glTexImage3D(target, 0, internalformat, width, height, depth, 0, GL_RGBA,
-                           GL_UNSIGNED_BYTE, NULL);
-    }
+
+    noerrorShim();
+    LOAD_GLES3(glTexStorage3D);
+    gles_glTexStorage3D(target, levels, wanted_internalformat, width, height, depth);
 
     int mlevel = maxlevel3d(width, height, depth);
     gltexture_t* bound = gl4es_getCurrentTexture(target);
+    bound->internalformat = internalformat;
+    bound->wanted_internal = wanted_internalformat;
+    bound->width = width;
+    bound->height = height;
+    bound->depth = depth;
+    GLsizei nwidth = (hardext.npot) ? width : npot(width);
+    GLsizei nheight = (hardext.npot) ? height : npot(height);
+    GLsizei ndepth = (hardext.npot) ? depth : npot(depth);
+    bound->nwidth = nwidth;
+    bound->nheight = nheight;
+    bound->ndepth = ndepth;
+    bound->npot = (nwidth != width || nheight != height || ndepth != depth);
+
     if (levels > 1 && isDXTc(internalformat)) {
         bound->mipmap_need = 1;
         bound->mipmap_auto = 1;
-        for (int i = 1; i <= mlevel; ++i)
-            gl4es_glTexImage3D(target, i, internalformat, nlevel3d(width, i), nlevel3d(height, i), nlevel3d(depth, i),
-                               0, bound->format, bound->type, NULL);
-        noerrorShim();
         return;
     }
     if (mlevel > levels - 1) {

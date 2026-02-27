@@ -101,7 +101,8 @@ extern "C"
         ENABLED_TEX3D,
         ENABLED_TEXTURE_RECTANGLE,
         ENABLED_CUBE_MAP,
-        ENABLED_TEXTURE_LAST
+        ENABLED_TEXTURE_LAST,
+        ENABLED_CUBE_MAP_ARRAY
     } texture_enabled_t;
 
     typedef struct {
@@ -190,6 +191,8 @@ extern "C"
             return ENABLED_TEX1D;
         case GL_TEXTURE_3D:
             return ENABLED_TEX3D;
+        case GL_TEXTURE_CUBE_MAP_ARRAY:
+            return ENABLED_CUBE_MAP_ARRAY;
         case GL_TEXTURE_CUBE_MAP:
         case GL_TEXTURE_CUBE_MAP_POSITIVE_X:
         case GL_TEXTURE_CUBE_MAP_NEGATIVE_X:

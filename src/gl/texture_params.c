@@ -176,9 +176,13 @@ void APIENTRY_GL4ES gl4es_glBindTexture(GLenum target, GLuint texture) {
     DBG(SHUT_LOGD("glBindTexture(%s, %u), active=%i, client=%i, list.active=%p (compiling=%d, pending=%d)\n",
                   PrintEnum(target), texture, glstate->texture.active, glstate->texture.client, glstate->list.active,
                   glstate->list.compiling, glstate->list.pending);)
-    if (target == GL_TEXTURE_BUFFER || target == GL_TEXTURE_3D) {
+    if (target == GL_TEXTURE_BUFFER || target == GL_TEXTURE_3D || target == GL_IMAGE_CUBE_MAP_ARRAY) {
         if (target == GL_TEXTURE_3D) {
-            glstate->texture.bound[glstate->texture.active][ENABLED_TEX3D] = gl4es_getTexture(target, texture);
+            glstate->texture.bound[glstate->texture.active][ENABLED_TEX3D] = gl4es_getTexture(
+                    target, texture);
+        }
+        else if (target == GL_IMAGE_CUBE_MAP_ARRAY) {
+            glstate->texture.bound[glstate->texture.active][ENABLED_CUBE_MAP_ARRAY] = gl4es_getTexture(target, texture);
         }
         LOAD_GLES(glBindTexture);
         realize_active();

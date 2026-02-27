@@ -4290,10 +4290,20 @@ extern "C"
     typedef void(APIENTRY_GLES* glTexImage2D_PTR)(glTexImage2D_ARG_EXPAND);
     void APIENTRY_GL4ES gl4es_glTexImage3D(glTexImage3D_ARG_EXPAND);
     typedef void(APIENTRY_GLES* glTexImage3D_PTR)(glTexImage3D_ARG_EXPAND);
+    void APIENTRY_GL4ES gl4es_glTexStorage3D(GLenum target, GLsizei levels, GLenum internalformat, GLsizei width,
+                                         GLsizei height, GLsizei depth);
+    typedef void(APIENTRY_GLES* glTexStorage3D_PTR)(GLenum target, GLsizei levels, GLenum internalformat, GLsizei width,
+                                         GLsizei height, GLsizei depth);
     void APIENTRY_GL4ES gl4es_glGetTexLevelParameteriv(glGetTexLevelParameteriv_ARG_EXPAND);
     typedef void(APIENTRY_GLES* glGetTexLevelParameteriv_PTR)(glGetTexLevelParameteriv_ARG_EXPAND);
     void APIENTRY_GL4ES gl4es_glTexParameterf(glTexParameterf_ARG_EXPAND);
     typedef void(APIENTRY_GLES* glTexParameterf_PTR)(glTexParameterf_ARG_EXPAND);
+    void APIENTRY_GL4ES gl4es_glCompressedTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
+                                                    GLint zoffset, GLsizei width, GLsizei height, GLsizei depth,
+                                                    GLenum format, GLsizei imageSize, const GLvoid* data);
+    typedef void(APIENTRY_GLES* glCompressedTexSubImage3D_PTR)(GLenum target, GLint level, GLint xoffset, GLint yoffset,
+                                                    GLint zoffset, GLsizei width, GLsizei height, GLsizei depth,
+                                                    GLenum format, GLsizei imageSize, const GLvoid* data);
     void APIENTRY_GL4ES gl4es_glTexParameterfv(glTexParameterfv_ARG_EXPAND);
     typedef void(APIENTRY_GLES* glTexParameterfv_PTR)(glTexParameterfv_ARG_EXPAND);
     void APIENTRY_GL4ES gl4es_glTexParameteri(glTexParameteri_ARG_EXPAND);
