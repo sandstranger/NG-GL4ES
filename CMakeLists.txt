@@ -2,17 +2,6 @@ cmake_minimum_required(VERSION 3.10)
 
 project(ng_gl4es)
 
-#if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
-    if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
-        add_compile_options(-ffunction-sections -fdata-sections)
-        add_link_options(-Wl,--gc-sections)
-    elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-#        add_compile_options(/O2 /GL)
-    endif()
-#endif()
-
-# glslang & SPIRV-Cross
-
 set(ENABLE_RTTI                ON  CACHE BOOL "Enables RTTI (will be took by glslang)" FORCE)
 set(ENABLE_HLSL                OFF CACHE BOOL "Disable HLSL input for glslang" FORCE)
 set(BUILD_EXTERNAL             OFF CACHE BOOL "Disable build external dependencies for glslang" FORCE)
@@ -29,7 +18,7 @@ set(SPIRV_CROSS_ENABLE_CPP     OFF CACHE BOOL "Disable C++ API target" FORCE)
 set(SPIRV_CROSS_CLI            OFF CACHE BOOL "Disable CLI binary" FORCE)
 set(SPIRV_CROSS_STATIC         ON  CACHE BOOL "Prefer static libs" FORCE)
 set(SPIRV_CROSS_ENABLE_UTIL    OFF  CACHE BOOL "Disable util" FORCE)
-set(ENABLE_PCH                 OFF  CACHE BOOL "Disable util" FORCE)
+set(ENABLE_PCH                 OFF  CACHE BOOL "Disable pch" FORCE)
 
 add_definitions(-DNO_INIT_CONSTRUCTOR)
 
@@ -44,11 +33,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -DNO_GBM -DDEFAULT_ES=3 -fvisibility=hidden")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -DNO_GBM -DDEFAULT_ES=3")
 
 if(ANDROID)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNOX11")

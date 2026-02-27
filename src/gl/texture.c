@@ -143,7 +143,7 @@ void internal2format_type(GLenum* internalformat, GLenum* format, GLenum* type) 
         break;
     case GL_RGB5:
     case GL_RGB565:
-        *format = GL_RGB;
+        *format = GL_RGBA;
         *type = GL_UNSIGNED_BYTE;
         break;
     case GL_RGB:
@@ -351,7 +351,7 @@ static void* swizzle_texture(GLsizei width, GLsizei height, GLenum* format, GLen
             // vvvvv all this are internal formats, so it should not happens
         case GL_RGB5:
         case GL_RGB565:
-            dest_format = GL_RGB;
+            dest_format = GL_RGBA;
             dest_type = GL_UNSIGNED_BYTE;
             convert = 1;
             check = 0;
@@ -531,6 +531,7 @@ static void* swizzle_texture(GLsizei width, GLsizei height, GLenum* format, GLen
                 break;
             }
     }
+
     if (data) {
         if (convert) {
             GLvoid* pixels = (GLvoid*)data;
@@ -623,7 +624,7 @@ GLenum swizzle_internalformat(GLenum* internalformat, GLenum format, GLenum type
             sret = GL_RG;
         break;
     case GL_RGB565:
-        ret = sret = GL_RGB8;
+        ret = sret = GL_RGBA8;
     case GL_RGB5:
         sret = GL_RGB5;
         break;
@@ -1078,7 +1079,7 @@ void APIENTRY_GL4ES gl4es_glTexImage2D(GLenum target, GLint level, GLint interna
 
     GLvoid* datab = (GLvoid*)data;
 
-    if (glstate->vao->unpack) datab = (char*)datab + (uintptr_t)glstate->vao->unpack->data;
+    if (glstate->vao->unpack) datab += (uintptr_t)glstate->vao->unpack->data;
 
     GLvoid* pixels = (GLvoid*)datab;
     border = 0; // TODO: something?
@@ -1197,7 +1198,6 @@ void APIENTRY_GL4ES gl4es_glTexImage2D(GLenum target, GLint level, GLint interna
         case GL_RG:
         case GL_RGB:
         case GL_RGB5:
-        case GL_RGB565:
         case GL_RGB8:
         case GL_RGB16:
         case GL_RGB16F:
@@ -1739,11 +1739,57 @@ static size_t pad_to(size_t v, GLint align) {
     return rem ? v + ((size_t)align - rem) : v;
 }
 
+void* rgb565_to_rgba8(int width, int height, const void* data) {
+    if (width <= 0 || height <= 0 || !data)
+        return nullptr;
+
+    size_t num_pixels = (size_t)width * height;
+    if (num_pixels == 0 || num_pixels > SIZE_MAX / 4)
+        return nullptr;
+
+    size_t out_size = num_pixels * 4;
+    unsigned char* out = (unsigned char*)malloc(out_size);
+    if (!out)
+        return nullptr;
+
+    const uint16_t* in = (const uint16_t*)data;
+
+    for (size_t i = 0; i < num_pixels; ++i) {
+        uint16_t pixel = in[i];
+
+        unsigned char r5 = (pixel >> 11) & 0x1F;
+        unsigned char g6 = (pixel >> 5)  & 0x3F;
+        unsigned char b5 =  pixel        & 0x1F;
+
+        unsigned char r8 = (r5 << 3) | (r5 >> 2);
+        unsigned char g8 = (g6 << 2) | (g6 >> 4);
+        unsigned char b8 = (b5 << 3) | (b5 >> 2);
+
+        out[i * 4 + 0] = r8;
+        out[i * 4 + 1] = g8;
+        out[i * 4 + 2] = b8;
+        out[i * 4 + 3] = 0xFF;
+    }
+
+    return out;
+}
+
 void APIENTRY_GL4ES gl4es_glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width,
                                           GLsizei height, GLenum format, GLenum type, const GLvoid* data) {
     if (width == 0 || height == 0) {
         DBG(SHUT_LOGE("Error: width or height is zero."))
         return;
+    }
+
+    extern int simpleShaderConvState;
+    bool isRGB565 = simpleShaderConvState <1 && format == GL_RGB && type == GL_UNSIGNED_SHORT_5_6_5;
+    GLvoid* rgb565Pixels = nullptr;
+
+    if (isRGB565) {
+        format = GL_RGBA;
+        type = GL_UNSIGNED_BYTE;
+        rgb565Pixels = rgb565_to_rgba8(width, height,data);
+        data = rgb565Pixels;
     }
 
     if (glstate->list.pending) {
@@ -1849,6 +1895,10 @@ void APIENTRY_GL4ES gl4es_glTexSubImage2D(GLenum target, GLint level, GLint xoff
     gles_glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, (const GLvoid*)pixels_src);
 
     if (temp_pixels) free(temp_pixels);
+
+    if (rgb565Pixels) {
+        free(rgb565Pixels);
+    }
 }
 
 // 1d stubs
@@ -1957,7 +2007,8 @@ void APIENTRY_GL4ES gl4es_glTexStorage2D(GLenum target, GLsizei levels, GLenum i
         TEX_IMAGE_LEVEL0(internalformat, width, height, GL_RED, GL_UNSIGNED_BYTE);
     }
     else if (internalformat == GL_RGB565) {
-        TEX_IMAGE_LEVEL0(internalformat, width, height, GL_RGB565, GL_UNSIGNED_BYTE);
+        internalformat = GL_RGBA8;
+        TEX_IMAGE_LEVEL0(internalformat, width, height, GL_RGBA, GL_UNSIGNED_BYTE);
     }
     else if (internalformat == GL_RGBA32F) {
         GLenum type = (hardext.floattex) ? GL_FLOAT : GL_UNSIGNED_BYTE;
