@@ -449,6 +449,45 @@ void APIENTRY_GL4ES gl4es_glTexImage3D(GLenum target, GLint level, GLint interna
 
     if (glstate->bound_changed < glstate->texture.active + 1) glstate->bound_changed = glstate->texture.active + 1;
 }
+
+static void* rgb565_to_rgba8_3d(int width, int height, int depth, const void* data) {
+    if (width <= 0 || height <= 0 || depth <= 0 || !data)
+        return NULL;
+
+    size_t pixels_per_layer = (size_t)width * height;
+    if (pixels_per_layer == 0 || pixels_per_layer > SIZE_MAX / (size_t)depth)
+        return NULL;
+    size_t total_pixels = pixels_per_layer * depth;
+    if (total_pixels > SIZE_MAX / 4)
+        return NULL;
+
+    size_t out_size = total_pixels * 4;
+    unsigned char* out = (unsigned char*)malloc(out_size);
+    if (!out)
+        return NULL;
+
+    const uint16_t* in = (const uint16_t*)data;
+
+    for (size_t i = 0; i < total_pixels; ++i) {
+        uint16_t pixel = in[i];
+
+        unsigned char r5 = (pixel >> 11) & 0x1F;
+        unsigned char g6 = (pixel >> 5)  & 0x3F;
+        unsigned char b5 =  pixel        & 0x1F;
+
+        unsigned char r8 = (r5 << 3) | (r5 >> 2);
+        unsigned char g8 = (g6 << 2) | (g6 >> 4);
+        unsigned char b8 = (b5 << 3) | (b5 >> 2);
+
+        out[i * 4 + 0] = r8;
+        out[i * 4 + 1] = g8;
+        out[i * 4 + 2] = b8;
+        out[i * 4 + 3] = 0xFF;
+    }
+
+    return out;
+}
+
 void APIENTRY_GL4ES gl4es_glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset,
                                           GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type,
                                           const GLvoid* data) {
@@ -458,8 +497,6 @@ void APIENTRY_GL4ES gl4es_glTexSubImage3D(GLenum target, GLint level, GLint xoff
         return;
     }
 
-    extern void* rgb565_to_rgba8(int width, int height, const void* data);
-
     gltexture_t* bound = gl4es_getCurrentTexture(target);
 
     bool isRGB565 = bound->internalformat == GL_RGB565;
@@ -468,7 +505,7 @@ void APIENTRY_GL4ES gl4es_glTexSubImage3D(GLenum target, GLint level, GLint xoff
     if (isRGB565) {
         format = GL_RGBA;
         type = GL_UNSIGNED_BYTE;
-        data = rgb565Pixels = rgb565_to_rgba8(width, height,data);
+        data = rgb565Pixels = rgb565_to_rgba8_3d(width, height,depth,data);
     }
 
     if (bound->wanted_internal == GL_RGBA8) {

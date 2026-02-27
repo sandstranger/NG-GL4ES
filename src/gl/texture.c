@@ -1737,7 +1737,7 @@ static size_t pad_to(size_t v, GLint align) {
     return rem ? v + ((size_t)align - rem) : v;
 }
 
-void* rgb565_to_rgba8(int width, int height, const void* data) {
+static void* rgb565_to_rgba8(int width, int height, const void* data) {
     if (width <= 0 || height <= 0 || !data)
         return nullptr;
 
