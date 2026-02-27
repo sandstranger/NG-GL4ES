@@ -1206,6 +1206,7 @@ void APIENTRY_GL4ES gl4es_glTexImage2D(GLenum target, GLint level, GLint interna
         case GL_R11F_G11F_B10F:
         case GL_R32F:
         case GL_RGB10_A2:
+        case 4:
             bound->fpe_format = FPE_TEX_RGB;
             break;
         /*case GL_DEPTH_COMPONENT:
