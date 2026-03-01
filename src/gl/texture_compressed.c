@@ -216,14 +216,12 @@ GLvoid *compressDXTc(GLsizei width, GLsizei height, GLenum format, const GLvoid 
     return compressedpixels;
 }
 
-
 void APIENTRY_GL4ES gl4es_glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei width,
                                                  GLsizei height, GLint border, GLsizei imageSize, const GLvoid* data) {
 
     if(!data) return;
     GLboolean generateMipmaps = (imageSize < 0) ? true : false;
     if (imageSize < 0) imageSize *= -1;
-
 
     const GLuint itarget = what_target(target);
     const GLuint rtarget = map_tex_target(target);
@@ -238,8 +236,10 @@ void APIENTRY_GL4ES gl4es_glCompressedTexImage2D(GLenum target, GLint level, GLe
     realize_bound(glstate->texture.active, target);
 
     gltexture_t* bound = glstate->texture.bound[glstate->texture.active][itarget];
-    DBG(SHUT_LOGD("glCompressedTexImage2D on target=%s, level=%d with size(%i,%i), internalformat=%s, imagesize=%i, upackbuffer=%p data=%p\n", 
-    PrintEnum(target), level, width, height, PrintEnum(internalformat), imageSize, glstate->vao->unpack?glstate->vao->unpack->data:0, data);)
+    DBG(SHUT_LOGD("glCompressedTexImage2D on target=%s:%p, level=%d with size(%i,%i), internalformat=%s, imagesize=%i, "
+                  "upackbuffer=%p data=%p\n",
+                  PrintEnum(target), bound, level, width, height, PrintEnum(internalformat), imageSize,
+                  glstate->vao->unpack ? glstate->vao->unpack->data : 0, data);)
     // hack...
     if (internalformat == GL_RGBA8) internalformat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
     // test if internalformat is not a compressed one
@@ -256,12 +256,12 @@ void APIENTRY_GL4ES gl4es_glCompressedTexImage2D(GLenum target, GLint level, GLe
     glbuffer_t* unpack = glstate->vao->unpack;
     glstate->vao->unpack = NULL;
     GLvoid* datab = (GLvoid*)data;
-    if (unpack) datab += (uintptr_t)unpack->data;
+    if (unpack) datab = (char*)+(uintptr_t)unpack->data;
 
     GLenum format = GL_RGBA;
     GLenum type = GL_UNSIGNED_BYTE;
 
- if ((!isFormatSupported(internalformat) && isDXTc(internalformat)) || (globals4es.dxt == 1 && isDXTc(internalformat))) {
+    if ((!isFormatSupported(internalformat) && isDXTc(internalformat)) || (globals4es.dxt == 1 && isDXTc(internalformat))) {
         if (level && bound->mipmap_auto == 1) return; // nothing to do
         GLvoid *pixels, *half;
         pixels = half = NULL;
@@ -312,7 +312,7 @@ void APIENTRY_GL4ES gl4es_glCompressedTexImage2D(GLenum target, GLint level, GLe
                 pixels = malloc(4 * width * height);
                 // crop
                 for (int y = 0; y < height; y++)
-                    memcpy(pixels + y * width * 4, tmp + y * nw * 4, width * 4);
+                    memcpy((char*)pixels + y * width * 4, (char*)tmp + y * nw * 4, width * 4);
                 free(tmp);
             } else {
                 pixels = uncompressDXTc(width, height, internalformat, imageSize, transparent0, &simpleAlpha,
@@ -354,18 +354,18 @@ void APIENTRY_GL4ES gl4es_glCompressedTexImage2D(GLenum target, GLint level, GLe
         int oldalign;
         gl4es_glGetIntegerv(GL_UNPACK_ALIGNMENT, &oldalign);
         if (oldalign != 1) gl4es_glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        GLenum new_intformat = (format == GL_RGBA) ? GL_COMPRESSED_RGBA : GL_COMPRESSED_RGB;
+        GLenum new_intformat = (format == GL_RGBA) ? GL_RGBA : GL_RGB;
         if (level && bound && bound->valid)
-            new_intformat = (bound->format == GL_RGB) ? GL_COMPRESSED_RGB : GL_COMPRESSED_RGBA;
+            new_intformat = (bound->format == GL_RGB) ? GL_RGB : GL_RGBA;
         DBG(SHUT_LOGD(" => internalformat=%s (Alpha=%d/%d), %dx%d %s/%s\n\n", PrintEnum(new_intformat), simpleAlpha,
                       complexAlpha, width, height, PrintEnum(format), PrintEnum(type));)
         gl4es_glTexImage2D(target, level, new_intformat, width, height, border, format, type, half);
         // re-update bounded texture info, but not format and type
         bound->alpha = (simpleAlpha || complexAlpha) ? 1 : 0;
         bound->compressed = 1;
-        bound->internalformat = internalformat;
+        bound->wanted_internal = bound->internalformat = internalformat;
         bound->valid = 1;
-        if(generateMipmaps && globals4es.dxtmipmap) {
+        if (generateMipmaps && globals4es.dxtmipmap) {
             // not automipmap yet? then set it...
             bound->mipmap_need = 1;
             // and upload higher level here...
@@ -391,15 +391,14 @@ void APIENTRY_GL4ES gl4es_glCompressedTexImage2D(GLenum target, GLint level, GLe
         if (oldalign != 1) gl4es_glPixelStorei(GL_UNPACK_ALIGNMENT, oldalign);
         if (half != pixels) free(half);
         if (pixels != datab) free(pixels);
-    } 
-    else if (isDXTc(internalformat) && globals4es.dxt != 3) {
+    }  else if (isDXTc(internalformat) && globals4es.dxt != 3) {
         //SHUT_LOGD("level %i width %i height %i max level %i\n", level, width, height, bound->max_level);
         LOAD_GLES(glCompressedTexImage2D);
         bound->alpha = (internalformat == GL_COMPRESSED_RGB_S3TC_DXT1_EXT) ? 0 : 1;
         bound->format = internalformat;
         //bound->type = GL_UNSIGNED_BYTE;
         bound->type = (internalformat==GL_COMPRESSED_RGB_S3TC_DXT1_EXT || internalformat==GL_COMPRESSED_SRGB_S3TC_DXT1_EXT)?GL_UNSIGNED_SHORT_5_6_5:((internalformat==GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)?GL_UNSIGNED_SHORT_5_5_5_1:GL_UNSIGNED_SHORT_4_4_4_4);
-        bound->internalformat = internalformat;
+        bound->wanted_internal = bound->internalformat = internalformat;
         bound->compressed = 1;
         bound->valid = 1;
         int oldalign;
@@ -416,7 +415,7 @@ void APIENTRY_GL4ES gl4es_glCompressedTexImage2D(GLenum target, GLint level, GLe
             int complexAlpha = 0;
             int transparent0 = (internalformat==GL_COMPRESSED_RGBA_S3TC_DXT1_EXT || internalformat==GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT)?1:0;
             GLvoid *pixels;
-            if ((width&3) || (height&3)) {  // can happens :(
+            if ((width&3) || (height&3)) {	// can happens :(
                 GLvoid *tmp;
                 GLsizei nw=width;
                 GLsizei nh=height;
@@ -426,7 +425,7 @@ void APIENTRY_GL4ES gl4es_glCompressedTexImage2D(GLenum target, GLint level, GLe
                 pixels = malloc(4*width*height);
                 // crop
                 for (int y=0; y<height; y++)
-                    memcpy(pixels+y*width*4, tmp+y*nw*4, width*4);
+                    memcpy((char*)pixels+y*width*4, (char*)tmp+y*nw*4, width*4);
                 free(tmp);
             } else {
                 pixels = uncompressDXTc(width, height, internalformat, imageSize, transparent0, &simpleAlpha, &complexAlpha, datab);
@@ -460,8 +459,7 @@ void APIENTRY_GL4ES gl4es_glCompressedTexImage2D(GLenum target, GLint level, GLe
         if (oldalign!=1) 
             gl4es_glPixelStorei(GL_UNPACK_ALIGNMENT, oldalign);
         errorGL();
-    }
-    else {
+    } else {
         LOAD_GLES(glCompressedTexImage2D);
         bound->alpha = 1;
         bound->format = internalformat;
@@ -495,14 +493,14 @@ void APIENTRY_GL4ES gl4es_glCompressedTexSubImage2D(GLenum target, GLint level, 
     glbuffer_t* unpack = glstate->vao->unpack;
     glstate->vao->unpack = NULL;
     GLvoid* datab = (GLvoid*)data;
-    if (unpack) datab += (uintptr_t)unpack->data;
+    if (unpack) datab = (char*)datab + (uintptr_t)unpack->data;
     LOAD_GLES(glCompressedTexSubImage2D);
     errorGL();
     int simpleAlpha = 0;
     int complexAlpha = 0;
     int transparent0 =
         (format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT || format == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT) ? 1 : 0;
-    if ((!isFormatSupported(format) && isDXTc(format)) || (globals4es.dxt == 1 && isDXTc(format))) {
+    if (isDXTc(format)) {
         if (level) {
             noerrorShim();
             return;
@@ -519,7 +517,7 @@ void APIENTRY_GL4ES gl4es_glCompressedTexSubImage2D(GLenum target, GLint level, 
             pixels = malloc(4 * width * height);
             // crop
             for (int y = 0; y < height; y++)
-                memcpy(pixels + y * width * 4, tmp + y * nw * 4, width * 4);
+                memcpy((char*)pixels + y * width * 4, (char*)tmp + y * nw * 4, width * 4);
             free(tmp);
         } else {
             pixels = uncompressDXTc(width, height, format, imageSize, transparent0, &simpleAlpha, &complexAlpha, datab);
@@ -550,8 +548,10 @@ void APIENTRY_GL4ES gl4es_glGetCompressedTexImage(GLenum target, GLint lod, GLvo
 
     const GLuint itarget = what_target(target);
     gltexture_t* bound = glstate->texture.bound[glstate->texture.active][itarget];
-    DBG(SHUT_LOGD("glGetCompressedTexImage(%s, %i, %p), bound=%p, bound->orig_internal=%s\n", 
-        PrintEnum(target), lod, img, bound, (bound)?PrintEnum(bound->orig_internal):"nil");)
+    DBG(SHUT_LOGD(
+            "glGetCompressedTexImage(%s, %i, %p), bound=%p, size=%dx%d, bound->orig_internal=%s/wanted_internal=%s\n",
+            PrintEnum(target), lod, img, bound, bound ? bound->width : 0, bound ? bound->height : 0,
+            (bound) ? PrintEnum(bound->orig_internal) : "nil", (bound) ? PrintEnum(bound->wanted_internal) : "nil");)
     errorShim(GL_INVALID_OPERATION);
     if (bound->orig_internal != GL_COMPRESSED_RGB && bound->orig_internal != GL_COMPRESSED_RGBA) return;
     int width = nlevel(bound->width, lod);
@@ -574,7 +574,7 @@ void APIENTRY_GL4ES gl4es_glGetCompressedTexImage(GLenum target, GLint lod, GLvo
     glstate->vao->unpack = NULL;
     glstate->vao->pack = NULL;
     GLvoid* datab = (GLvoid*)img;
-    if (pack) datab += (uintptr_t)pack->data;
+    if (pack) datab = (char*)datab + (uintptr_t)pack->data;
 
     // alloc the memory for source image and grab the file
     GLuint* src = (GLuint*)malloc(width * height * 4);
@@ -593,7 +593,7 @@ void APIENTRY_GL4ES gl4es_glGetCompressedTexImage(GLenum target, GLint lod, GLvo
                 }
             }
             stb_compress_dxt_block((unsigned char*)datab, (const unsigned char*)tmp, ralpha, STB_DXT_NORMAL);
-            datab += 8 * (ralpha + 1);
+            datab = (char*)datab + 8 * (ralpha + 1);
         }
     free(src);
 

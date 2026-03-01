@@ -4,7 +4,7 @@
 #if defined(PANDORA)
 #define USE_FBIO 1
 #endif
-#define GL4ES_AUTOMIPMAP_PLACEHOLDER 1
+#define GL4ES_AUTOMIPMAP_PLACEHOLDER 0
 #define TEXTURE_IMAGE_MAGNIFICATION 2
 
 typedef struct _globals4es {
@@ -95,10 +95,10 @@ typedef struct _globals4es {
     const char* force_egl_lib;
     const char* force_gles_lib;
     _Bool enableANGLE;
-    int dxt;
-    int dxtmipmap;
     int simple_shaderconv;
     int instancing;
+    int dxt;
+    int dxtmipmap;
 } globals4es_t;
 
 extern globals4es_t globals4es;

@@ -161,6 +161,8 @@ void initialize_gl4es() {
     env(LIBGL_XREFRESH, globals4es.xrefresh, "xrefresh will be called on cleanup");
     env(LIBGL_STACKTRACE, globals4es.stacktrace, "stacktrace will be printed on crash");
 
+    globals4es.dxtmipmap = 1;
+
     env(LIBGL_INSTANCING, globals4es.instancing, "Using HW glDrawElementsInstanced");
 
     const int LIBGL_FB_ENV_VAR =
