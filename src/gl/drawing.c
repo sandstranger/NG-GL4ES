@@ -1515,10 +1515,34 @@ void APIENTRY_GL4ES gl4es_glDrawArraysInstanced(GLenum mode, GLint first, GLsize
 AliasExport(void, glDrawArraysInstanced, , (GLenum mode, GLint first, GLsizei count, GLsizei primcount));
 AliasExport(void, glDrawArraysInstanced, ARB, (GLenum mode, GLint first, GLsizei count, GLsizei primcount));
 
+typedef void (*glDrawElementsInstanced_PTR)(GLenum mode, GLsizei count, GLenum type, const void *indices, GLsizei primcount);
 void APIENTRY_GL4ES gl4es_glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, const void* indices,
                                                   GLsizei primcount) {
     DBG(SHUT_LOGD("glDrawElementsInstanced(%s, %d, %s, %p, %d), list=%p pending=%d\n", PrintEnum(mode), count,
                   PrintEnum(type), indices, primcount, glstate->list.active, glstate->list.pending);)
+
+    if(globals4es.instancing) {
+        LOAD_GLES2(glDrawElementsInstanced);
+
+        scratch_t scratch = {0};
+        realize_textures(1);
+        realize_glenv(mode==GL_POINTS, 0, 0, type, indices, &scratch);
+        free_scratch(&scratch);
+
+        LOAD_GLES2(glBindBuffer);
+        LOAD_GLES2(glGetIntegerv);
+
+        GLint old_buffer;
+        gles_glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &old_buffer);
+
+        gles_glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glstate->vao->elements->real_buffer);
+        gles_glDrawElementsInstanced(mode, count, type, indices, primcount);
+        gles_glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, old_buffer);
+
+        return;
+    }
+
+
     count = adjust_vertices(mode, count);
 
     if (count < 0) {

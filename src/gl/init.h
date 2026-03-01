@@ -98,6 +98,7 @@ typedef struct _globals4es {
     int dxt;
     int dxtmipmap;
     int simple_shaderconv;
+    int instancing;
 } globals4es_t;
 
 extern globals4es_t globals4es;

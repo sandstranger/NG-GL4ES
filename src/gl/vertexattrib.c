@@ -6,6 +6,7 @@
 #include "enum_info.h"
 #include "gl4es.h"
 #include "glstate.h"
+#include "loader.h"
 
 //#define DEBUG
 #ifdef DEBUG
@@ -327,7 +328,16 @@ void APIENTRY_GL4ES gl4es_glGetVertexAttribPointerv(GLuint index, GLenum pname, 
     noerrorShim();
 }
 
+typedef void (*glVertexAttribDivisor_PTR)(GLuint index, GLuint divisor);
 void APIENTRY_GL4ES gl4es_glVertexAttribDivisor(GLuint index, GLuint divisor) {
+
+    if(globals4es.instancing)
+    {
+        LOAD_GLES2(glVertexAttribDivisor);
+        gles_glVertexAttribDivisor(index, divisor);
+        return;
+    }
+
     FLUSH_BEGINEND;
     // sanity test
     if(index<0 || index>=hardext.maxvattrib) {
