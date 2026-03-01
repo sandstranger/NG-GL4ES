@@ -176,7 +176,8 @@ void APIENTRY_GL4ES gl4es_glBindTexture(GLenum target, GLuint texture) {
     DBG(SHUT_LOGD("glBindTexture(%s, %u), active=%i, client=%i, list.active=%p (compiling=%d, pending=%d)\n",
                   PrintEnum(target), texture, glstate->texture.active, glstate->texture.client, glstate->list.active,
                   glstate->list.compiling, glstate->list.pending);)
-    if (target == GL_TEXTURE_BUFFER || target == GL_TEXTURE_3D || target == GL_IMAGE_CUBE_MAP_ARRAY) {
+    LOAD_GLES(glActiveTexture);
+    if (target == GL_TEXTURE_3D || target == GL_IMAGE_CUBE_MAP_ARRAY) {
         if (target == GL_TEXTURE_3D) {
             glstate->texture.bound[glstate->texture.active][ENABLED_TEX3D] = gl4es_getTexture(
                     target, texture);
@@ -184,6 +185,13 @@ void APIENTRY_GL4ES gl4es_glBindTexture(GLenum target, GLuint texture) {
         else if (target == GL_IMAGE_CUBE_MAP_ARRAY) {
             glstate->texture.bound[glstate->texture.active][ENABLED_CUBE_MAP_ARRAY] = gl4es_getTexture(target, texture);
         }
+
+        if (glstate->bound_changed < glstate->texture.active + 1)
+            glstate->bound_changed = glstate->texture.active + 1;
+        if (glstate->fpe_state && glstate->fpe_bound_changed < glstate->texture.active + 1)
+            glstate->fpe_bound_changed = glstate->texture.active + 1;
+
+        gles_glActiveTexture(GL_TEXTURE0 + glstate->texture.active);
         LOAD_GLES(glBindTexture);
         realize_active();
         gles_glBindTexture(target, texture);
@@ -205,6 +213,15 @@ void APIENTRY_GL4ES gl4es_glBindTexture(GLenum target, GLuint texture) {
         FLUSH_BEGINEND;
         tex_changed = glstate->texture.active + 1;
         glstate->texture.bound[glstate->texture.active][itarget] = tex;
+
+        if (target == GL_TEXTURE_CUBE_MAP){
+            if (glstate->bound_changed < glstate->texture.active + 1)
+                glstate->bound_changed = glstate->texture.active + 1;
+            if (glstate->fpe_state && glstate->fpe_bound_changed < glstate->texture.active + 1)
+                glstate->fpe_bound_changed = glstate->texture.active + 1;
+
+            gles_glActiveTexture(GL_TEXTURE0 + glstate->texture.active);
+        }
 
         LOAD_GLES(glBindTexture);
         switch (target) {
@@ -993,7 +1010,7 @@ void realize_textures(int drawing) {
         GLenum target = map_tex_target(to_target(tgt));
         gltexture_t* tex = glstate->texture.bound[i][tgt];
         GLuint t = tex->glname;
-        if (tgt != ENABLED_CUBE_MAP) { // CUBE MAP are immediately bound
+        if (tgt != ENABLED_CUBE_MAP && target!=ENABLED_CUBE_MAP_ARRAY && target!=ENABLED_TEX3D) { // CUBE MAP are immediately bound
 #ifdef TEXSTREAM
             if (glstate->bound_stream[i]) {
                 realize_active();
