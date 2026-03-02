@@ -184,8 +184,12 @@ void APIENTRY_GL4ES gl4es_glBindTexture(GLenum target, GLuint texture) {
         else if (target == GL_IMAGE_CUBE_MAP_ARRAY) {
             glstate->texture.bound[glstate->texture.active][ENABLED_CUBE_MAP_ARRAY] = gl4es_getTexture(target, texture);
         }
-        LOAD_GLES(glBindTexture);
         realize_active();
+        if (glstate->bound_changed < glstate->texture.active + 1)
+            glstate->bound_changed = glstate->texture.active + 1;
+        if (glstate->fpe_state && glstate->fpe_bound_changed < glstate->texture.active + 1)
+            glstate->fpe_bound_changed = glstate->texture.active + 1;
+        LOAD_GLES(glBindTexture);
         gles_glBindTexture(target, texture);
         return;
     }
@@ -1001,20 +1005,34 @@ void realize_textures(int drawing) {
         GLenum target = map_tex_target(to_target(tgt));
         gltexture_t* tex = glstate->texture.bound[i][tgt];
         GLuint t = tex->glname;
-        if (tgt == ENABLED_CUBE_MAP) {
-            GLenum internalformat = tex->internalformat;
-            tex->mipmap_need = (is_mipmap_needed(&tex->sampler) && (hardext.esversion != 1) &&
-                                !tex->npot) && tex->max_level >= 0 && (internalformat != GL_DEPTH_COMPONENT &&
-                                                                       internalformat != GL_DEPTH_STENCIL &&
-                                                                       internalformat != GL_DEPTH24_STENCIL8 &&
-                                                                       internalformat != GL_DEPTH_COMPONENT16) ? 1 : 0;
-            if (tex->mipmap_need && !tex->mipmap_done) {
-                if (!tex->mipmap_auto) {
-                    // should check if glGenerateMipmap exist, and fall back to no mipmap if not
-                    LOAD_GLES2_OR_OES(glGenerateMipmap);
-                    gles_glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+        if (tgt == ENABLED_CUBE_MAP || target==ENABLED_CUBE_MAP_ARRAY || target==ENABLED_TEX3D) {
+            if (tex->compressed && tex->mipmap_auto == 0){
+                tex->mipmap_need = 0;
+            }
+            else {
+                GLenum internalformat = tex->internalformat;
+                tex->mipmap_need = (is_mipmap_needed(&tex->sampler) && (hardext.esversion != 1) &&
+                                    !tex->npot) && tex->max_level >= 0 &&
+                                   (internalformat != GL_DEPTH_COMPONENT &&
+                                    internalformat != GL_DEPTH_STENCIL &&
+                                    internalformat != GL_DEPTH24_STENCIL8 &&
+                                    internalformat != GL_DEPTH_COMPONENT16) ? 1 : 0;
+                if (tex->mipmap_need && !tex->mipmap_done) {
+                    if (!tex->mipmap_auto) {
+                        LOAD_GLES2_OR_OES(glGenerateMipmap);
+                        GLenum target_mipmap = GL_TEXTURE_2D;
+                        if (tgt == ENABLED_TEX3D){
+                            target_mipmap = GL_TEXTURE_3D;
+                        }
+                        else if (tgt == ENABLED_CUBE_MAP_ARRAY){
+                            target_mipmap = GL_TEXTURE_CUBE_MAP_ARRAY;
+                        } else if (tgt == ENABLED_CUBE_MAP){
+                            target_mipmap = GL_TEXTURE_CUBE_MAP;
+                        }
+                        gles_glGenerateMipmap(target_mipmap);
+                    }
+                    tex->mipmap_done = 1;
                 }
-                tex->mipmap_done = 1;
             }
         }
         else if (target!=ENABLED_CUBE_MAP_ARRAY && target!=ENABLED_TEX3D) { // CUBE MAP are immediately bound
