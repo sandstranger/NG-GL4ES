@@ -1035,7 +1035,7 @@ void realize_textures(int drawing) {
                 }
             }
         }
-        else if (target!=ENABLED_CUBE_MAP_ARRAY && target!=ENABLED_TEX3D) { // CUBE MAP are immediately bound
+        else { // CUBE MAP are immediately bound
 #ifdef TEXSTREAM
             if (glstate->bound_stream[i]) {
                 realize_active();
