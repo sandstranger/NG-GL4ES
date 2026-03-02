@@ -216,6 +216,8 @@ extern "C"
             return GL_TEXTURE_3D;
         case ENABLED_TEXTURE_RECTANGLE:
             return GL_TEXTURE_RECTANGLE_ARB;
+        case ENABLED_CUBE_MAP_ARRAY:
+            return GL_TEXTURE_CUBE_MAP_ARRAY;
         case ENABLED_CUBE_MAP:
             return GL_TEXTURE_CUBE_MAP;
         case ENABLED_TEX2D:

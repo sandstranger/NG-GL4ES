@@ -176,7 +176,7 @@ void APIENTRY_GL4ES gl4es_glBindTexture(GLenum target, GLuint texture) {
     DBG(SHUT_LOGD("glBindTexture(%s, %u), active=%i, client=%i, list.active=%p (compiling=%d, pending=%d)\n",
                   PrintEnum(target), texture, glstate->texture.active, glstate->texture.client, glstate->list.active,
                   glstate->list.compiling, glstate->list.pending);)
-    if (target == GL_TEXTURE_BUFFER || target == GL_TEXTURE_3D || target == GL_IMAGE_CUBE_MAP_ARRAY) {
+    if (target == GL_TEXTURE_3D || target == GL_IMAGE_CUBE_MAP_ARRAY) {
         if (target == GL_TEXTURE_3D) {
             glstate->texture.bound[glstate->texture.active][ENABLED_TEX3D] = gl4es_getTexture(
                     target, texture);
@@ -205,6 +205,10 @@ void APIENTRY_GL4ES gl4es_glBindTexture(GLenum target, GLuint texture) {
         FLUSH_BEGINEND;
         tex_changed = glstate->texture.active + 1;
         glstate->texture.bound[glstate->texture.active][itarget] = tex;
+
+        if (target == GL_TEXTURE_CUBE_MAP){
+            realize_active();
+        }
 
         LOAD_GLES(glBindTexture);
         switch (target) {
@@ -993,7 +997,7 @@ void realize_textures(int drawing) {
         GLenum target = map_tex_target(to_target(tgt));
         gltexture_t* tex = glstate->texture.bound[i][tgt];
         GLuint t = tex->glname;
-        if (tgt != ENABLED_CUBE_MAP) { // CUBE MAP are immediately bound
+        if (tgt != ENABLED_CUBE_MAP && target!=ENABLED_CUBE_MAP_ARRAY && target!=ENABLED_TEX3D) { // CUBE MAP are immediately bound
 #ifdef TEXSTREAM
             if (glstate->bound_stream[i]) {
                 realize_active();
@@ -1044,8 +1048,14 @@ void realize_textures(int drawing) {
                 ((GL4ES_AUTOMIPMAP_PLACEHOLDER == 1) && (tex->mipmap_auto == 0)) ||
                 (tex->compressed && (tex->mipmap_auto == 0)))
                 tex->mipmap_need = 0;
-            else
-                tex->mipmap_need = (is_mipmap_needed(&tex->sampler) && (hardext.esversion != 1) && !tex->npot) ? 1 : 0;
+            else {
+                GLenum internalformat = tex->internalformat;
+                tex->mipmap_need = (is_mipmap_needed(&tex->sampler) && (hardext.esversion != 1) &&
+                                    !tex->npot) && tex->max_level >= 0 && (internalformat != GL_DEPTH_COMPONENT &&
+                                                      internalformat != GL_DEPTH_STENCIL &&
+                                                      internalformat != GL_DEPTH24_STENCIL8 &&
+                                                      internalformat != GL_DEPTH_COMPONENT16) ? 1 : 0;
+            }
             if (tex->mipmap_need && !tex->mipmap_done) {
                 if (!tex->mipmap_auto) {
                     // should check if glGenerateMipmap exist, and fall back to no mipmap if not

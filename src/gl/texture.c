@@ -2695,7 +2695,7 @@ void APIENTRY_GL4ES gl4es_glTexStorage2D(GLenum target, GLsizei levels, GLenum i
 
     if (levels > 1 && isDXTc(internalformat)) {
         bound->mipmap_need = 1;
-        bound->mipmap_auto = 1;
+        bound->mipmap_auto = 0;
         for (int i = 1; i <= mlevel; ++i) {
             GLsizei w = nlevel(width, i);
             GLsizei h = nlevel(height, i);
@@ -2710,11 +2710,19 @@ void APIENTRY_GL4ES gl4es_glTexStorage2D(GLenum target, GLsizei levels, GLenum i
         return;
     }
 
-    if (mlevel > levels - 1) {
+
+    if (mlevel > levels - 1 && levels > 0) {
         bound->max_level = levels - 1;
-        if (levels > 1 && GL4ES_AUTOMIPMAP_PLACEHOLDER != 3)
+        bool generate_mipmaps = ((internalformat != GL_DEPTH_COMPONENT &&
+                                  internalformat != GL_DEPTH_STENCIL &&
+                                  internalformat != GL_DEPTH24_STENCIL8 &&
+                                  internalformat != GL_DEPTH_COMPONENT16) &&
+                                 levels > 1);
+
+        if (generate_mipmaps)
             bound->mipmap_need = 1;
     }
+
 
     for (int i = 1; i < levels; ++i) {
         GLsizei w = nlevel(width, i);

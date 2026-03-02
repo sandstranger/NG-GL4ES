@@ -358,16 +358,6 @@ void APIENTRY_GL4ES gl4es_glTexStorage3D(GLenum target, GLsizei levels, GLenum i
     bound->nheight = nheight;
     bound->ndepth = ndepth;
     bound->npot = (nwidth != width || nheight != height || ndepth != depth);
-
-    if (levels > 1 && isDXTc(internalformat)) {
-        bound->mipmap_need = 1;
-        bound->mipmap_auto = 1;
-        return;
-    }
-    if (mlevel > levels - 1) {
-        bound->max_level = levels - 1;
-        if (levels > 1 && GL4ES_AUTOMIPMAP_PLACEHOLDER != 3) bound->mipmap_need = 1;
-    }
 }
 
 void APIENTRY_GL4ES gl4es_glCopyTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset,
