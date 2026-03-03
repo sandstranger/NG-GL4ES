@@ -221,7 +221,6 @@ void APIENTRY_GL4ES gl4es_glCompressedTexImage2D(GLenum target, GLint level, GLe
 
     if(!data) return;
     GLboolean generateMipmaps = (imageSize < 0) ? true : false;
-    if (imageSize < 0) imageSize *= -1;
 
     const GLuint itarget = what_target(target);
     const GLuint rtarget = map_tex_target(target);
@@ -365,28 +364,6 @@ void APIENTRY_GL4ES gl4es_glCompressedTexImage2D(GLenum target, GLint level, GLe
         bound->compressed = 1;
         bound->wanted_internal = bound->internalformat = internalformat;
         bound->valid = 1;
-        if (generateMipmaps && globals4es.dxtmipmap) {
-            // not automipmap yet? then set it...
-            bound->mipmap_need = 1;
-            // and upload higher level here...
-            int leveln = level, nww = width, nhh = height;
-            void* ndata = pixels;
-            while (nww != 1 || nhh != 1) {
-                GLvoid* out = ndata;
-                if (half) { // half can be null if no data...
-                    pixel_halfscale(ndata, &out, nww, nhh, GL_RGBA, GL_UNSIGNED_BYTE);
-                    if (out != ndata && ndata != pixels) free(ndata);
-                    ndata = out;
-                }
-                nww = nlevel(nww, 1);
-                nhh = nlevel(nhh, 1);
-                if (half) pixel_convert(ndata, &out, nww, nhh, GL_RGBA, GL_UNSIGNED_BYTE, format, type, 0, 1);
-                ++leveln;
-                gl4es_glTexImage2D(target, leveln, new_intformat, nww, nhh, border, format, type, out);
-                if (out != ndata) free(out);
-            }
-            bound->mipmap_auto = 1;
-        }
 
         if (oldalign != 1) gl4es_glPixelStorei(GL_UNPACK_ALIGNMENT, oldalign);
         if (half != pixels) free(half);
