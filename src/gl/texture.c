@@ -2444,7 +2444,7 @@ void APIENTRY_GL4ES gl4es_glTexSubImage2D(GLenum target, GLint level, GLint xoff
         data = rgb565Pixels = rgb565_to_rgba8(width, height,data);
     }
 
-    if (format == GL_BGRA || format == GL_BGR || format == GL_BGRA8_EXT || ((format == GL_RGBA8 || format == GL_RGB8) &&
+    if (format == GL_BGRA || format == GL_BGR || format == GL_BGRA8_EXT || ((format == GL_RGBA || format == GL_RGB) &&
     type == GL_UNSIGNED_BYTE)) {
         old_glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, data);
         if (rgb565Pixels){
