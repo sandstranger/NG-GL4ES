@@ -211,7 +211,8 @@ void initialize_gl4es() {
         SHUT_LOGD("Set gamma to %.2f", globals4es.gamma);
     }
 #endif
-    env(LIBGL_NOBGRA, globals4es.nobgra, "Ignore BGRA texture capability");
+    globals4es.nobgra = 1;
+//    env(LIBGL_NOBGRA, globals4es.nobgra, "Ignore BGRA texture capability");
     env(LIBGL_NOTEXRECT, globals4es.notexrect, "Don't export Text Rectangle extension");
     if (globals4es.usefbo) {
         env(LIBGL_FBONOALPHA, globals4es.fbo_noalpha, "Main FBO has no alpha channel");
