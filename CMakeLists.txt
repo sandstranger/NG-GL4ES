@@ -5,7 +5,7 @@ project(ng_gl4es)
 if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
    add_compile_options(-ffunction-sections -fdata-sections)
    add_link_options(-Wl,--gc-sections)
-else
+else()
    add_compile_options(-fno-lto)
 endif()
 
