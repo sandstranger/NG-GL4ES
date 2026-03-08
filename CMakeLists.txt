@@ -5,8 +5,9 @@ project(ng_gl4es)
 if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
    add_compile_options(-ffunction-sections -fdata-sections)
    add_link_options(-Wl,--gc-sections)
+else
+   add_compile_options(-fno-lto)
 endif()
-
 
 set(ENABLE_RTTI                ON  CACHE BOOL "Enables RTTI (will be took by glslang)" FORCE)
 set(ENABLE_HLSL                OFF CACHE BOOL "Disable HLSL input for glslang" FORCE)
