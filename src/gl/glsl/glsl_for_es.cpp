@@ -810,6 +810,8 @@ std::vector<unsigned int> glsl_to_spirv(GLenum shader_type, int glsl_version, co
     std::vector<unsigned int> spirv_code;
     glslang::SpvOptions spvOptions;
     spvOptions.disableOptimizer = false;
+    spvOptions.optimizeSize = true;
+    spvOptions.stripDebugInfo = true;
     glslang::GlslangToSpv(*program.getIntermediate(shader_language), spirv_code, &spvOptions);
     errc = 0;
     return spirv_code;
