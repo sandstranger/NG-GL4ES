@@ -236,6 +236,7 @@ int samplerParameterfv(glsampler_t* sampler, GLenum pname, const GLfloat* params
     noerrorShim();
     return 1;
 }
+
 int getSamplerParameterfv(glsampler_t* sampler, GLenum pname, GLfloat* params) {
     DBG(SHUT_LOGD("samplerParameterfv(%p(%d), %s, %p)\n", sampler, sampler->glname, PrintEnum(pname), params);)
     switch (pname) {

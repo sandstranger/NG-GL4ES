@@ -324,7 +324,7 @@ void APIENTRY_GL4ES gl4es_glTexParameterfv(GLenum target, GLenum pname, const GL
     DBG(SHUT_LOGD("glTexParameterfv(%s, %s, [%f(%s)...])\n", PrintEnum(target), PrintEnum(pname), params[0],
                   PrintEnum(params[0]));)
 
-    if (target == GL_TEXTURE_BUFFER) {
+    if (target == GL_TEXTURE_BUFFER || target == GL_TEXTURE_3D) {
         LOAD_GLES(glTexParameterfv);
         gles_glTexParameterfv(target, pname, params);
         return;
@@ -436,7 +436,7 @@ void APIENTRY_GL4ES gl4es_glTexParameterfv(GLenum target, GLenum pname, const GL
         case GL_TEXTURE_LOD_BIAS:
             return; // not on GLES
         case GL_GENERATE_MIPMAP:
-            if (GL4ES_AUTOMIPMAP_PLACEHOLDER == 3) return;                // no mipmap, so no need to generate any
+            if (GL4ES_AUTOMIPMAP_PLACEHOLDER == 3) return;         // no mipmap, so no need to generate any
             if (texture->mipmap_auto == ((param) ? 1 : 0)) return; // same value...
             texture->mipmap_auto = (param) ? 1 : 0;
             if (hardext.esversion > 1) {
