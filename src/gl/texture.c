@@ -1087,14 +1087,14 @@ GLenum swizzle_internalformat(GLenum* internalformat, GLenum format, GLenum type
         }
         break;
     case GL_COMPRESSED_RGB:
-        sret = GL_RGB8;
+        sret = GL_RGB;
         break;
     case GL_COMPRESSED_RGBA:
-        sret = GL_RGBA8;
+        sret = GL_RGBA;
         break;
     case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
     case GL_COMPRESSED_SRGB_S3TC_DXT1_EXT: // should be sRGB...
-        ret = sret = GL_RGB8;
+        ret = sret = GL_RGB;
         break;
     case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT: // not good...
     case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT: // not good, but there is no DXT3 compressor
@@ -1102,7 +1102,7 @@ GLenum swizzle_internalformat(GLenum* internalformat, GLenum format, GLenum type
     case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT:
     case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT:
     case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT:
-        ret = sret = GL_RGBA8;
+        ret = sret = GL_RGBA;
         break;
     case GL_BGRA8_EXT:
     case GL_BGRA:
@@ -1110,8 +1110,8 @@ GLenum swizzle_internalformat(GLenum* internalformat, GLenum format, GLenum type
             ret = GL_BGRA;
             sret = GL_BGRA;
         } else {
-            ret = GL_RGBA8;
-            sret = GL_RGBA8;
+            ret = GL_RGBA;
+            sret = GL_RGBA;
         }
         break;
     case GL_DEPTH_COMPONENT:
@@ -1185,8 +1185,8 @@ GLenum swizzle_internalformat(GLenum* internalformat, GLenum format, GLenum type
             sret = ret = GL_DEPTH_COMPONENT;
             break;
         }
-        ret = GL_RGBA8;
-        sret = GL_RGBA8;
+        ret = GL_RGBA;
+        sret = GL_RGBA;
         break;
         // Default...RGBA / RGBA will be fine....
     }
@@ -1377,12 +1377,6 @@ void APIENTRY_GL4ES gl4es_glTexImage2D(GLenum target, GLint level, GLint interna
         return;
     }
 
-    if (internalformat == GL_RGBA) {
-        internalformat = GL_RGBA8;
-        format = GL_RGBA;
-        type = GL_UNSIGNED_BYTE;
-    }
-
     // pre-format handling
     if (format == GL_DEPTH_COMPONENT) {
         internalformat = GL_DEPTH_COMPONENT;
@@ -1395,7 +1389,7 @@ void APIENTRY_GL4ES gl4es_glTexImage2D(GLenum target, GLint level, GLint interna
         internalformat = GL_RGBA;
     }
 
-    internal_convert(&internalformat, &type, &format);
+//    internal_convert(&internalformat, &type, &format);
 
     if (internalformat == GL_R16F) internal2format_type(&internalformat, &format, &type);
     if (data == NULL && (internalformat == GL_RED || internalformat == GL_RGB))
@@ -1442,8 +1436,6 @@ void APIENTRY_GL4ES gl4es_glTexImage2D(GLenum target, GLint level, GLint interna
     if (type == GL_UNSIGNED_INT_8_8_8_8_REV)
 #endif
         type = GL_UNSIGNED_BYTE;
-
-    if (type == GL_HALF_FLOAT) type = GL_HALF_FLOAT_OES;
 
     /*if(format==GL_COMPRESSED_LUMINANCE)
         format = GL_RGB;*/    // Danger from the Deep does that.
@@ -2686,6 +2678,9 @@ void APIENTRY_GL4ES gl4es_glTexStorage2D(GLenum target, GLsizei levels, GLenum i
     }
     else if (internalformat == GL_RGBA16F) {
         TEX_IMAGE_LEVEL0(internalformat, width, height, GL_RGBA, GL_HALF_FLOAT);
+    }
+    else if (internalformat == GL_RGB8) {
+        TEX_IMAGE_LEVEL0(internalformat, width, height, GL_RGB, GL_UNSIGNED_BYTE);
     }
     else {
         TEX_IMAGE_LEVEL0(internalformat, width, height, GL_RGBA, GL_UNSIGNED_BYTE);
