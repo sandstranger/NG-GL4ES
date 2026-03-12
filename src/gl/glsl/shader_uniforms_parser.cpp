@@ -5,6 +5,7 @@
 #include <sstream>
 #include <algorithm>
 #include <cctype>
+#include <memory>
 #include "../gl4es.h"
 
 using namespace std;
@@ -27,53 +28,89 @@ static bool isIdChar(char c) {
     return isalnum(static_cast<unsigned char>(c)) || c == '_';
 }
 
+static bool isUniformUsed(const string& src, const string& name) {
+    if (name.empty()) return false;
+    size_t count = 0;
+    size_t pos = 0;
+    const size_t nameLen = name.length();
+    while ((pos = src.find(name, pos)) != string::npos) {
+        bool startMatch = (pos == 0 || !isIdChar(src[pos - 1]));
+        bool endMatch = (pos + nameLen >= src.length() || !isIdChar(src[pos + nameLen]));
+        if (startMatch && endMatch) {
+            count++;
+            if (count > 1) return true;
+        }
+        pos += nameLen;
+    }
+    return false;
+}
+
+extern "C" {
+
 __attribute__((used)) __attribute__((visibility("default")))
-extern "C" int getUniformIndex(GLuint program, const char* uniformName) {
+int getUniformIndex(GLuint program, const char* uniformName) {
     if (parsedUniformsCache.contains(program)) {
-        const string uniformNameString = uniformName;
-        auto uniformInfo = parsedUniformsCache[program].get();
-        if (uniformInfo->uniformNameToIndex.contains(uniformNameString)){
-            return uniformInfo->uniformNameToIndex[uniformNameString];
+        const string nameStr = uniformName;
+        auto& info = parsedUniformsCache.at(program);
+        if (info->uniformNameToIndex.contains(nameStr)) {
+            return info->uniformNameToIndex.at(nameStr);
         }
     }
     return 0;
 }
 
 __attribute__((used)) __attribute__((visibility("default")))
-extern "C" void removeProgramFromCache(GLuint program) {
+void removeProgramFromCache(GLuint program) {
     parsedUniformsCache.erase(program);
 }
 
 __attribute__((used)) __attribute__((visibility("default")))
-extern "C" void getUniformsFromShader(GLuint program, GLuint shader) {
+void getUniformsFromShader(GLuint program, GLuint shader) {
     FLUSH_BEGINEND;
     CHECK_PROGRAM(void, program)
     CHECK_SHADER(void, shader)
 
-    const auto source = glshader->converted;
+    const char* source = glshader->converted ? glshader->converted : glshader->source;
     if (!source) return;
 
-    uniformInfo* info;
-
     if (!parsedUniformsCache.contains(program)) {
-        auto newInfo = make_unique<uniformInfo>();
-        newInfo->currentUniformIndex = 0;
-        info = newInfo.get();
-        parsedUniformsCache[program] = std::move(newInfo);
-    } else {
-        info = parsedUniformsCache[program].get();
+        parsedUniformsCache[program] = make_unique<uniformInfo>();
     }
+    auto& info = parsedUniformsCache.at(program);
 
     string src = source;
+
+    // 1. Remove comments
+    size_t p = 0;
+    while ((p = src.find("//", p)) != string::npos) {
+        size_t end = src.find('\n', p);
+        if (end == string::npos) {
+            src.erase(p);
+            break;
+        }
+        src.erase(p, end - p);
+    }
+    p = 0;
+    while ((p = src.find("/*", p)) != string::npos) {
+        size_t end = src.find("*/", p);
+        if (end == string::npos) {
+            src.erase(p);
+            break;
+        }
+        src.erase(p, end - p + 2);
+    }
+
+    static const string kUniformToken = "uniform";
+    const size_t kTokenLen = kUniformToken.length();
     size_t pos = 0;
 
-    while ((pos = src.find("uniform", pos)) != string::npos) {
+    while ((pos = src.find(kUniformToken, pos)) != string::npos) {
         if ((pos == 0 || !isIdChar(src[pos - 1])) &&
-            (pos + 7 >= src.length() || !isIdChar(src[pos + 7]))) {
+            (pos + kTokenLen >= src.length() || !isIdChar(src[pos + kTokenLen]))) {
 
             size_t endDecl = src.find(';', pos);
             if (endDecl != string::npos) {
-                string decl = src.substr(pos + 7, endDecl - (pos + 7));
+                string decl = src.substr(pos + kTokenLen, endDecl - (pos + kTokenLen));
 
                 stringstream ss(decl);
                 string segment;
@@ -88,11 +125,7 @@ extern "C" void getUniformsFromShader(GLuint program, GLuint shader) {
                     string name;
                     if (firstSegment) {
                         size_t lastSpace = s.find_last_of(" \t\n\r");
-                        if (lastSpace != string::npos) {
-                            name = trim(s.substr(lastSpace + 1));
-                        } else {
-                            name = s;
-                        }
+                        name = (lastSpace != string::npos) ? trim(s.substr(lastSpace + 1)) : s;
                         firstSegment = false;
                     } else {
                         name = s;
@@ -102,15 +135,18 @@ extern "C" void getUniformsFromShader(GLuint program, GLuint shader) {
                     if (bracket != string::npos) name = trim(name.substr(0, bracket));
 
                     if (!name.empty() && !info->uniformNameToIndex.contains(name)) {
-                        info->uniformNameToIndex[name] = info->currentUniformIndex++;
+                        if (isUniformUsed(src, name)) {
+                            info->uniformNameToIndex[name] = info->currentUniformIndex++;
+                        }
                     }
                 }
                 pos = endDecl + 1;
             } else {
-                pos += 7;
+                pos += kTokenLen;
             }
         } else {
-            pos += 7;
+            pos += kTokenLen;
         }
     }
+}
 }
