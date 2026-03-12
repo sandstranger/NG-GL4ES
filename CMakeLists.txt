@@ -137,6 +137,7 @@ endif()
 
 set(CPP_SRC_FILES
     src/gl/glsl/glsl_for_es.cpp
+    src/gl/glsl/shader_uniforms_parser.cpp
     src/gl/getter.cpp
 )
 
