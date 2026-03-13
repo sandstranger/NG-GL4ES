@@ -2619,6 +2619,10 @@ void APIENTRY_GL4ES gl4es_glTexStorage2D(GLenum target, GLsizei levels, GLenum i
         return;
     }
 
+    gltexture_t* bound = gl4es_getCurrentTexture(target);
+    bound->mipmap_need = 1;
+    bound->mipmap_auto = 1;
+
     int is_cube = (target == GL_TEXTURE_CUBE_MAP);
     if (is_cube && width != height) {
         errorShim(GL_INVALID_VALUE);
@@ -2686,7 +2690,6 @@ void APIENTRY_GL4ES gl4es_glTexStorage2D(GLenum target, GLsizei levels, GLenum i
         TEX_IMAGE_LEVEL0(internalformat, width, height, GL_RGBA, GL_UNSIGNED_BYTE);
     }
 
-    gltexture_t* bound = gl4es_getCurrentTexture(target);
     int mlevel = maxlevel(width, height);
 
     if (levels > 1 && isDXTc(internalformat)) {
