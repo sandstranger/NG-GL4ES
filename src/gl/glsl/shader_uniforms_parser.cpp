@@ -1,7 +1,5 @@
 #include "shader_uniforms_parser.h"
-#include <string>
 #include <unordered_map>
-#include <vector>
 #include <sstream>
 #include <algorithm>
 #include <cctype>
@@ -9,14 +7,7 @@
 #include <regex>
 #include "../gl4es.h"
 
-using namespace std;
-
-struct uniformInfo {
-    int currentUniformIndex = 0;
-    unordered_map<string, int> uniformNameToIndex;
-};
-
-static unordered_map<GLuint, unique_ptr<uniformInfo>> parsedUniformsCache;
+static unordered_map<GLuint, vector<string>> parsedUniformsCache;
 
 static string trim(const string& s) {
     size_t first = s.find_first_not_of(" \t\n\r");
@@ -25,27 +16,21 @@ static string trim(const string& s) {
     return s.substr(first, (last - first + 1));
 }
 
-extern "C" {
-
 __attribute__((used)) __attribute__((visibility("default")))
-int getUniformIndex(GLuint program, const char* uniformName) {
+vector<string> getUniforms(GLuint program) {
     if (parsedUniformsCache.contains(program)) {
-        const string nameStr = uniformName;
-        auto& info = parsedUniformsCache.at(program);
-        if (info->uniformNameToIndex.contains(nameStr)) {
-            return info->uniformNameToIndex.at(nameStr);
-        }
+        return parsedUniformsCache.at(program);
     }
-    return 0;
+    return {};
 }
-
 __attribute__((used)) __attribute__((visibility("default")))
 void removeProgramFromCache(GLuint program) {
     parsedUniformsCache.erase(program);
 }
 
+extern "C" {
 __attribute__((used)) __attribute__((visibility("default")))
-void getUniformsFromShader(GLuint program, GLuint shader) {
+void parseUniformsFromShader(GLuint program, GLuint shader) {
     FLUSH_BEGINEND;
     CHECK_PROGRAM(void, program)
     CHECK_SHADER(void, shader)
@@ -54,9 +39,9 @@ void getUniformsFromShader(GLuint program, GLuint shader) {
     if (!sourcePtr) return;
 
     if (!parsedUniformsCache.contains(program)) {
-        parsedUniformsCache[program] = make_unique<uniformInfo>();
+        parsedUniformsCache[program] = {};
     }
-    auto& info = parsedUniformsCache.at(program);
+    auto& uniforms = parsedUniformsCache.at(program);
 
     string src = sourcePtr;
     static const regex kDeclRegex(R"(\buniform\s+([^;]+);)");
@@ -91,10 +76,10 @@ void getUniformsFromShader(GLuint program, GLuint shader) {
             size_t bracket = name.find('[');
             if (bracket != string::npos) name = trim(name.substr(0, bracket));
 
-            if (!name.empty() && !info->uniformNameToIndex.contains(name)) {
+            if (!name.empty()) {
                 regex usageRegex("\\b" + name + "\\b");
                 if (regex_search(usageBody, usageRegex)) {
-                    info->uniformNameToIndex[name] = info->currentUniformIndex++;
+                    uniforms.push_back(name);
                 }
             }
         }
