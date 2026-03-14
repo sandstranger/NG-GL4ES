@@ -8,12 +8,17 @@
 #include "../gl4es.h"
 
 static unordered_map<GLuint, vector<string>> parsedUniformsCache;
+static unordered_map<GLuint, size_t> programSamplerCount;
 
 static string trim(const string& s) {
     size_t first = s.find_first_not_of(" \t\n\r");
     if (string::npos == first) return "";
     size_t last = s.find_last_not_of(" \t\n\r");
     return s.substr(first, (last - first + 1));
+}
+
+static bool isSamplerType(const string& type) {
+    return type.find("sampler") != string::npos;
 }
 
 __attribute__((used)) __attribute__((visibility("default")))
@@ -23,9 +28,11 @@ vector<string> getUniforms(GLuint program) {
     }
     return {};
 }
+
 __attribute__((used)) __attribute__((visibility("default")))
 void removeProgramFromCache(GLuint program) {
     parsedUniformsCache.erase(program);
+    programSamplerCount.erase(program);
 }
 
 extern "C" {
@@ -40,6 +47,7 @@ void parseUniformsFromShader(GLuint program, GLuint shader) {
 
     if (!parsedUniformsCache.contains(program)) {
         parsedUniformsCache[program] = {};
+        programSamplerCount[program] = 0;
     }
     auto& uniforms = parsedUniformsCache.at(program);
 
@@ -47,6 +55,12 @@ void parseUniformsFromShader(GLuint program, GLuint shader) {
     static const regex kDeclRegex(R"(\buniform\s+([^;]+);)");
 
     string usageBody = regex_replace(src, kDeclRegex, " ");
+
+    struct TempDecl {
+        string name;
+        bool isSampler;
+    };
+    vector<TempDecl> allFound;
 
     auto decls_begin = sregex_iterator(src.begin(), src.end(), kDeclRegex);
     auto decls_end = sregex_iterator();
@@ -57,6 +71,7 @@ void parseUniformsFromShader(GLuint program, GLuint shader) {
 
         stringstream ss(content);
         string segment;
+        string currentType;
         bool firstSegment = true;
         while (getline(ss, segment, ',')) {
             string s = trim(segment);
@@ -65,7 +80,12 @@ void parseUniformsFromShader(GLuint program, GLuint shader) {
             string name;
             if (firstSegment) {
                 size_t lastSpace = s.find_last_of(" \t\n\r");
-                name = (lastSpace != string::npos) ? trim(s.substr(lastSpace + 1)) : s;
+                if (lastSpace != string::npos) {
+                    currentType = trim(s.substr(0, lastSpace));
+                    name = trim(s.substr(lastSpace + 1));
+                } else {
+                    name = s;
+                }
                 firstSegment = false;
             } else {
                 name = s;
@@ -79,8 +99,25 @@ void parseUniformsFromShader(GLuint program, GLuint shader) {
             if (!name.empty()) {
                 regex usageRegex("\\b" + name + "\\b");
                 if (regex_search(usageBody, usageRegex)) {
-                    uniforms.push_back(name);
+                    allFound.push_back({name, isSamplerType(currentType)});
                 }
+            }
+        }
+    }
+
+    for (const auto& d : allFound) {
+        if (d.isSampler) {
+            if (find(uniforms.begin(), uniforms.end(), d.name) == uniforms.end()) {
+                uniforms.insert(uniforms.begin() + programSamplerCount[program], d.name);
+                programSamplerCount[program]++;
+            }
+        }
+    }
+
+    for (const auto& d : allFound) {
+        if (!d.isSampler) {
+            if (find(uniforms.begin(), uniforms.end(), d.name) == uniforms.end()) {
+                uniforms.push_back(d.name);
             }
         }
     }

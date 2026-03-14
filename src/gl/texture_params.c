@@ -1001,9 +1001,12 @@ void realize_textures(int drawing) {
             tgt = ENABLED_TEX1D;
         else if (IS_CUBE_MAP(tmp))
             tgt = ENABLED_CUBE_MAP;
+        else if (IS_CUBE_MAP_ARRAY(tmp))
+            tgt = ENABLED_CUBE_MAP_ARRAY;
 
         GLenum target = map_tex_target(to_target(tgt));
         gltexture_t* tex = glstate->texture.bound[i][tgt];
+
         GLuint t = tex->glname;
         if (tgt == ENABLED_CUBE_MAP || target==ENABLED_CUBE_MAP_ARRAY || target==ENABLED_TEX3D) {
             if (drawing) {

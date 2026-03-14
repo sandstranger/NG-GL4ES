@@ -232,6 +232,7 @@ extern "C"
 #define IS_ANYTEX(T)                                                                                                   \
     (T & ((1 << ENABLED_TEX2D) | (1 << ENABLED_TEX1D) | (1 << ENABLED_TEX3D) | (1 << ENABLED_TEXTURE_RECTANGLE)))
 #define IS_CUBE_MAP(T) (T & (1 << ENABLED_CUBE_MAP))
+#define IS_CUBE_MAP_ARRAY(T) (T & (1 << ENABLED_CUBE_MAP_ARRAY))
 
     static inline GLint get_target(GLuint enabled) {
         if (!enabled) return -1;
