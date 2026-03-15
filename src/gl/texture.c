@@ -952,8 +952,8 @@ GLenum swizzle_internalformat(GLenum* internalformat, GLenum format, GLenum type
             break;
         case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
         case GL_COMPRESSED_SRGB_S3TC_DXT1_EXT: // should be sRGB...
-            ret = GL_RGB8;
-            sret = GL_RGB8;
+            ret = GL_RGB;
+            sret = GL_RGB;
             break;
         case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT: // not good...
         case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT: // not good, but there is no DXT3 compressor
@@ -961,8 +961,8 @@ GLenum swizzle_internalformat(GLenum* internalformat, GLenum format, GLenum type
         case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT:
         case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT:
         case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT:
-            ret = GL_RGBA8;
-            sret = GL_RGBA8;
+            ret = GL_RGBA;
+            sret = GL_RGBA;
             break;
         case GL_BGRA8_EXT:
         case GL_BGRA:
@@ -970,8 +970,8 @@ GLenum swizzle_internalformat(GLenum* internalformat, GLenum format, GLenum type
                 ret = GL_BGRA;
                 sret = GL_BGRA;
             } else {
-                ret = GL_RGBA8;
-                sret = GL_RGBA8;
+                ret = GL_RGBA;
+                sret = GL_RGBA;
             }
             break;
         case GL_DEPTH_COMPONENT:
@@ -1045,8 +1045,8 @@ GLenum swizzle_internalformat(GLenum* internalformat, GLenum format, GLenum type
                 sret = ret = GL_DEPTH_COMPONENT;
                 break;
             }
-            ret = GL_RGBA8;
-            sret = GL_RGBA8;
+            ret = GL_RGBA;
+            sret = GL_RGBA;
             break;
             // Default...RGBA / RGBA will be fine....
     }
