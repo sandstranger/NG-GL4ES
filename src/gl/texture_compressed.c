@@ -477,7 +477,7 @@ void APIENTRY_GL4ES gl4es_glCompressedTexSubImage2D(GLenum target, GLint level, 
     int complexAlpha = 0;
     int transparent0 =
         (format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT || format == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT) ? 1 : 0;
-    if (isDXTc(format)) {
+    if ((!isFormatSupported(format) && isDXTc(format)) || (globals4es.dxt == 1 && isDXTc(format))) {
         if (level) {
             noerrorShim();
             return;
