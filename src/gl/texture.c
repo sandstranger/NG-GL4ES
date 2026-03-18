@@ -1243,6 +1243,11 @@ void APIENTRY_GL4ES gl4es_glTexImage2D(GLenum target, GLint level, GLint interna
         internalformat = GL_DEPTH_COMPONENT;
         type = GL_UNSIGNED_INT;
     }
+
+    if (internalformat == GL_RGBA && format == GL_RGBA && type == GL_UNSIGNED_BYTE) {
+        internalformat = GL_RGBA8;
+    }
+
     if (internalformat == GL_RGBA16) {
         internalformat = GL_RGBA16F;
         type = GL_FLOAT;
