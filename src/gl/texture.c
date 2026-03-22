@@ -842,10 +842,8 @@ GLenum swizzle_internalformat(GLenum* internalformat, GLenum format, GLenum type
             sret = GL_RGB5;
             break;
         case GL_RGB:
-            if (globals4es.avoid16bits == 0 && format == GL_RGB && type == GL_UNSIGNED_SHORT_5_6_5) {
-                sret = ret = GL_RGB5;
-                break;
-            }
+            sret = ret = GL_RGB;
+            break;
         case GL_RGB8:
         case GL_BGR:
         case GL_RGB16:
@@ -862,17 +860,8 @@ GLenum swizzle_internalformat(GLenum* internalformat, GLenum format, GLenum type
             sret = GL_RGB5_A1;
             break;
         case GL_RGBA:
-            if (globals4es.avoid16bits == 0 && format == GL_RGBA && type == GL_UNSIGNED_SHORT_5_5_5_1) {
-                sret = ret = GL_RGB5_A1;
-                break;
-            }
-            if (globals4es.avoid16bits == 0 && format == GL_RGBA && type == GL_UNSIGNED_SHORT_4_4_4_4) {
-                sret = ret = GL_RGBA4;
-                break;
-            }
-            if (format == GL_BGRA && bgra_ok) {
-                sret = ret = GL_BGRA;
-            }
+            sret = ret = GL_RGBA;
+            break;
         case GL_RGBA16F:
             sret = ret = GL_RGBA16F;
             break;
