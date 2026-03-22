@@ -222,7 +222,7 @@ void initialize_gl4es() {
     }
 
     globals4es.es = 3;
-    globals4es.esversion = simpleShaderConvState == 1 ? 310 : 320;
+    globals4es.esversion = simpleShaderConvState == 1 ? 300 : 320;
 
 /*    globals4es.es = ReturnEnvVarInt("LIBGL_ES");
     switch (globals4es.es) {
