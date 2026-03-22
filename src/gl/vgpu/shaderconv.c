@@ -440,7 +440,7 @@ int sourceLengthaaa = strlen(shader_source->source) + 1;
         }
 
         source = InplaceReplaceSimple(source, &sourceLength, "#version 120",
-"#version 320 es\n\
+"#version 310 es\n\
 #extension GL_EXT_shader_non_constant_global_initializers : enable\n\
 #extension GL_EXT_gpu_shader5 : enable\n\
 #ifdef GL_OES_standard_derivatives\n\

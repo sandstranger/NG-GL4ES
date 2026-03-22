@@ -89,6 +89,11 @@ static const char* egl_lib[] = {
 #endif
     "libEGL", NULL};
 
+#define EGL_ANGLE          "libEGL_angle.so"
+#define OGL_ES2_ANGLE      "libGLESv2_angle.so"
+
+extern bool g_enableAngle;
+
 void* open_lib(const char** names, const char* override) {
     void* lib = NULL;
 
@@ -139,7 +144,7 @@ void load_libs() {
     if (!first) return;
     first = 0;
 #ifndef _WIN32
-    const char* gles_override = globals4es.force_gles_lib ? globals4es.force_gles_lib : GetEnvVar("LIBGL_GLES");
+    const char* gles_override = g_enableAngle ? OGL_ES2_ANGLE : DEFAULT_GLES;
     if (!gles_override) {
         gles_override = DEFAULT_GLES;
 #if defined(BCMHOST) && !defined(ANDROID)
@@ -161,7 +166,7 @@ void load_libs() {
 #ifdef NOEGL
     egl = gles;
 #elif !defined(_WIN32)
-    const char* egl_override = globals4es.force_egl_lib ? globals4es.force_egl_lib : GetEnvVar("LIBGL_EGL");
+    const char* egl_override = g_enableAngle ? EGL_ANGLE : DEFAULT_EGL;
     if (!egl_override) {
         egl_override = DEFAULT_EGL;
     }

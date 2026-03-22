@@ -27,6 +27,7 @@
 #include "config.h"
 
 int simpleShaderConvState = 1;
+bool g_enableAngle = false;
 
 #if defined(__EMSCRIPTEN__)
 #define NO_INIT_CONSTRUCTOR
@@ -94,7 +95,9 @@ void initialize_ng_gl4es() {
         LOGD("ANGLE disabled and not used")
     }
         */
-    globals4es.enableANGLE = false;
+#if ANDROID
+    globals4es.enableANGLE = g_enableAngle;
+#endif
 }
 char* NGGDirectory;
 
@@ -218,7 +221,10 @@ void initialize_gl4es() {
         env(LIBGL_FBONOALPHA, globals4es.fbo_noalpha, "Main FBO has no alpha channel");
     }
 
-    globals4es.es = ReturnEnvVarInt("LIBGL_ES");
+    globals4es.es = 3;
+    globals4es.esversion = simpleShaderConvState == 1 ? 310 : 320;
+
+/*    globals4es.es = ReturnEnvVarInt("LIBGL_ES");
     switch (globals4es.es) {
     case 1:
     case 2:
@@ -233,7 +239,7 @@ void initialize_gl4es() {
     globals4es.esversion = 0; // will be set in glGetString
 #else
     globals4es.esversion = 300;
-#endif
+#endif*/
     init_internal_glDrawElementsBaseVertex();
 
     globals4es.use_mc_color = ReturnEnvVarInt("LIBGL_USE_MC_COLOR");
@@ -820,6 +826,11 @@ void initialize_gl4es() {
 __attribute__((used)) __attribute__((visibility("default")))
 void updateSimpleShaderConvState(int shaderConvState){
     simpleShaderConvState = shaderConvState;
+}
+
+__attribute__((used)) __attribute__((visibility("default")))
+void updateEnableAngleState(bool enableAngle){
+    g_enableAngle = enableAngle;
 }
 
 #ifndef NOX11
