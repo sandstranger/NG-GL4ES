@@ -10,6 +10,7 @@
 #include "shaderconv.h"
 #include "vgpu/shaderconv.h"
 #include "glsl/glsl_for_es.h"
+#include "string_utils.h"
 #include <ctype.h>
 #include <string.h>
 

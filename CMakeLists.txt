@@ -34,7 +34,7 @@ add_subdirectory(3rdparty/SPIRV-Cross)
 
 enable_language(CXX)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_C_STANDARD 23)
@@ -137,7 +137,6 @@ endif()
 
 set(CPP_SRC_FILES
     src/gl/glsl/glsl_for_es.cpp
-    src/gl/glsl/shader_uniforms_parser.cpp
     src/gl/getter.cpp
 )
 
