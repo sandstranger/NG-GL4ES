@@ -821,6 +821,7 @@ std::vector<unsigned int> glsl_to_spirv(GLenum shader_type, int glsl_version, co
 
 std::string spirv_to_essl(std::vector<uint32_t> spirv, unsigned int essl_version, int& errc) {
     spvtools::Optimizer optimizer(SPV_ENV_UNIVERSAL_1_5);
+    optimizer.RegisterLegalizationPasses();
     optimizer.RegisterPerformancePasses(false);
     std::vector<uint32_t> optimized;
     bool ok = optimizer.Run(spirv.data(), spirv.size(), &optimized);
