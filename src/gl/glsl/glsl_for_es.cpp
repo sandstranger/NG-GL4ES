@@ -14,6 +14,8 @@
 #include <string>
 #include <sstream>
 #include "../../../version.h"
+#include <spirv-tools/libspirv.hpp>
+#include <spirv-tools/optimizer.hpp>
 
 extern "C"
 {
@@ -817,15 +819,22 @@ std::vector<unsigned int> glsl_to_spirv(GLenum shader_type, int glsl_version, co
     return spirv_code;
 }
 
-std::string spirv_to_essl(std::vector<unsigned int> spirv, unsigned int essl_version, int& errc) {
+std::string spirv_to_essl(std::vector<uint32_t> spirv, unsigned int essl_version, int& errc) {
+    spvtools::Optimizer optimizer(SPV_ENV_UNIVERSAL_1_5);
+    optimizer.RegisterPerformancePasses(false);
+    std::vector<uint32_t> optimized;
+    bool ok = optimizer.Run(spirv.data(), spirv.size(), &optimized);
+    if (!ok) {
+        errc = -1;
+        return "";
+    }
+    spirv = std::move(optimized);
     spvc_context context = nullptr;
     spvc_parsed_ir ir = nullptr;
     spvc_compiler compiler_glsl = nullptr;
     spvc_compiler_options options = nullptr;
     spvc_resources resources = nullptr;
-    //    const spvc_reflected_resource* list = nullptr;
     const char* result = nullptr;
-    //    size_t count;
 
     const SpvId* p_spirv = spirv.data();
     size_t word_count = spirv.size();
@@ -846,13 +855,13 @@ std::string spirv_to_essl(std::vector<unsigned int> spirv, unsigned int essl_ver
     if (!result) {
         DBG(SHUT_LOGD("Error: unexpected error in spirv-cross."));
         errc = -1;
+        spvc_context_destroy(context);
         return "";
     }
 
     std::string essl = result;
 
     spvc_context_destroy(context);
-
     errc = 0;
     return essl;
 }

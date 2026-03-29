@@ -26,11 +26,15 @@ set(SPIRV_CROSS_CLI            OFF CACHE BOOL "Disable CLI binary" FORCE)
 set(SPIRV_CROSS_STATIC         ON  CACHE BOOL "Prefer static libs" FORCE)
 set(SPIRV_CROSS_ENABLE_UTIL    OFF  CACHE BOOL "Disable util" FORCE)
 set(ENABLE_PCH                 OFF  CACHE BOOL "Disable pch" FORCE)
+set(SPIRV_SKIP_TESTS           ON  CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS          OFF  CACHE BOOL "" FORCE)
+set(SPIRV_WERROR               OFF  CACHE BOOL "" FORCE)
 
 add_definitions(-DNO_INIT_CONSTRUCTOR)
 
 add_subdirectory(3rdparty/glslang)
 add_subdirectory(3rdparty/SPIRV-Cross)
+add_subdirectory(3rdparty/SPIRV-Tools)
 
 enable_language(CXX)
 
@@ -147,6 +151,8 @@ add_library(ng_gl4es SHARED ${SRC_FILES})
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
     glslang::glslang
     spirv-cross-c
+    SPIRV-Tools-opt
+    SPIRV-Tools
 )
 
 if(MACOS)

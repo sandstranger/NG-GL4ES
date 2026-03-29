@@ -347,15 +347,15 @@ char* version120to330(struct shader_s* shader_source) {
             source = ReplaceGLFragColor(source, &sourceLength);
         }
 
-        source = InplaceReplaceSimple(source, &sourceLength, "#version 120", "#version 460\n");
-        source = InplaceReplaceSimple(source, &sourceLength, "#version 130", "#version 460\n");
-        source = InplaceReplaceSimple(source, &sourceLength, "#version 140", "#version 460\n");
+        source = InplaceReplaceSimple(source, &sourceLength, "#version 120", "#version 410\n");
+        source = InplaceReplaceSimple(source, &sourceLength, "#version 130", "#version 410\n");
+        source = InplaceReplaceSimple(source, &sourceLength, "#version 140", "#version 410\n");
 
         source = InplaceReplaceSimple(source, &sourceLength, "#extension GL_ARB_uniform_buffer_object : require", "");
         source = InplaceReplaceSimple(source, &sourceLength, "#extension GL_EXT_gpu_shader4: require", "");
 
-        source = InplaceReplaceSimple(source, &sourceLength, "#version 460",
-"#version 460\n\
+        source = InplaceReplaceSimple(source, &sourceLength, "#version 410",
+"#version 410\n\
 precision highp float;\n\
 precision highp int;\n\
 #define texture2D texture\n\
