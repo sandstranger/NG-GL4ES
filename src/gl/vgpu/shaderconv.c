@@ -328,6 +328,51 @@ char* process_uniform_declarations(char* glslCode, uniforms_declarations uniform
     return modifiedGlslCode;
 }
 
+
+
+char* version120to330(struct shader_s* shader_source) {
+
+        shader_source->converted = ConvertShaderSimple(shader_source->source, shader_source->type == GL_VERTEX_SHADER ? 1 : 0, &shader_source->need, 1);
+
+        char * source = shader_source->converted;
+        int sourceLength = strlen(source) + 1;
+
+        if (shader_source->type == GL_VERTEX_SHADER) {
+            source = ReplaceVariableName(source, &sourceLength, "attribute", "in");
+            source = ReplaceVariableName(source, &sourceLength, "varying", "out");
+        }
+        else {
+            source = ReplaceVariableName(source, &sourceLength, "varying", "in");
+            source = ReplaceGLFragData(source, &sourceLength);
+            source = ReplaceGLFragColor(source, &sourceLength);
+        }
+
+        source = InplaceReplaceSimple(source, &sourceLength, "#version 120", "#version 460\n");
+        source = InplaceReplaceSimple(source, &sourceLength, "#version 130", "#version 460\n");
+        source = InplaceReplaceSimple(source, &sourceLength, "#version 140", "#version 460\n");
+
+        source = InplaceReplaceSimple(source, &sourceLength, "#extension GL_ARB_uniform_buffer_object : require", "");
+        source = InplaceReplaceSimple(source, &sourceLength, "#extension GL_EXT_gpu_shader4: require", "");
+
+        source = InplaceReplaceSimple(source, &sourceLength, "#version 460",
+"#version 460\n\
+precision highp float;\n\
+precision highp int;\n\
+#define texture2D texture\n\
+#define texture3D texture\n\
+#define texture2DProj textureProj\n\
+#define shadow2D texture\n\
+#define shadow2DProj textureProj\n\
+#define texture2DLod textureLod\n\
+#define textureSize2D textureSize\n\
+#define sample sample2\n\
+");
+//        source = InplaceReplaceSimple(source, &sourceLength, "textureSize2D", "textureSize");
+
+        shader_source->converted = source;
+        return shader_source->converted;
+}
+
 /**
  * Makes more and more destructive conversions to make the shader compile
  * @return The shader as a string
@@ -541,6 +586,9 @@ vec4 vgpu_step(int x, vec4 y) { return step(float(x), y); }\n\
 vec4 vgpu_step(vec4 x, vec4 y) { return step(x, y); }\n\
 float vgpu_exp2(float x) { return exp2(x); }\n\
 float vgpu_exp2(int x) { return exp2(float(x)); }\n\
+vec2 vgpu_exp2(vec2 x) { return exp2(x); }\n\
+vec3 vgpu_exp2(vec3 x) { return exp2(x); }\n\
+vec4 vgpu_exp2(vec4 x) { return exp2(x); }\n\
 vec2 vgpu_textureSize2D(sampler2D sampler, int level) { return vec2(textureSize(sampler, level)); }\n\
 vec4 vgpu_shadow2DProj(sampler2DShadow sampler, vec4 uv) { return vec4(textureProj(sampler, uv)); }\n\
 ");

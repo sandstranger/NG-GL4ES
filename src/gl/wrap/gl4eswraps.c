@@ -626,13 +626,13 @@ void APIENTRY_GL4ES gl4es_glBlendEquationSeparatei(GLuint buf, GLenum modeRGB, G
 	// TODO: handle buf
 	gl4es_glBlendEquationSeparate(modeRGB, modeAlpha);
 }
-
+/*
 void APIENTRY_GL4ES gl4es_glBlendFuncSeparatei(GLuint buf, GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha) {
 	// ignore buf is better than nothing..
 	// TODO: handle buf
 	gl4es_glBlendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha);
 }
-
+*/
 #undef constDoubleToFloat
 
 void APIENTRY_GL4ES gl4es_glGetTexParameterfv(GLenum target, GLenum pname, GLfloat * params) {

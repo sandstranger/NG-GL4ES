@@ -46,4 +46,6 @@ char* ProcessSwitchCases(char* source, int* length);
 
 char* GetOperandFromOperator(char* source, int operatorIndex, int rightOperand, int * limit);
 
+
+char* version120to330(struct shader_s* shader_source);
 #endif //UNTITLED_SHADERCONV_H

@@ -1972,53 +1972,53 @@ void APIENTRY_GL4ES gl4es_glColorMaskIndexed(GLuint framebuffer, GLboolean red, 
     gl4es_glBindFramebuffer(target, oldf);
 }
 
-typedef void (*glEnableiEXT_PTR)(GLenum target, GLuint index);
-void APIENTRY_GL4ES gl4es_glEnableiEXT(GLenum target, GLuint index)
+typedef void (*glEnablei_PTR)(GLenum target, GLuint index);
+void APIENTRY_GL4ES gl4es_glEnablei(GLenum target, GLuint index)
 {
-    LOAD_GLES(glEnableiEXT);
-    gles_glEnableiEXT(target, index);
+    LOAD_GLES(glEnablei);
+    gles_glEnablei(target, index);
 }
 
-typedef void (*glDisableiEXT_PTR)(GLenum target, GLuint index);
-void APIENTRY_GL4ES gl4es_glDisableiEXT(GLenum target, GLuint index)
+typedef void (*glDisablei_PTR)(GLenum target, GLuint index);
+void APIENTRY_GL4ES gl4es_glDisablei(GLenum target, GLuint index)
 {
-    LOAD_GLES(glDisableiEXT);
-    gles_glDisableiEXT(target, index);
+    LOAD_GLES(glDisablei);
+    gles_glDisablei(target, index);
 }
 
-typedef void (*glColorMaskiEXT_PTR)(GLuint buf, GLboolean r, GLboolean g, GLboolean b, GLboolean a);
-void APIENTRY_GL4ES gl4es_glColorMaskiEXT(GLuint buf, GLboolean r, GLboolean g, GLboolean b, GLboolean a)
+typedef void (*glColorMaski_PTR)(GLuint buf, GLboolean r, GLboolean g, GLboolean b, GLboolean a);
+void APIENTRY_GL4ES gl4es_glColorMaski(GLuint buf, GLboolean r, GLboolean g, GLboolean b, GLboolean a)
 {
-    LOAD_GLES(glColorMaskiEXT);
-    gles_glColorMaskiEXT(buf, r, g, b, a);
+    LOAD_GLES(glColorMaski);
+    gles_glColorMaski(buf, r, g, b, a);
 }
 
-typedef GLboolean (*glIsEnablediEXT_PTR)(GLenum target, GLuint index);
-GLboolean APIENTRY_GL4ES gl4es_glIsEnablediEXT(GLenum target, GLuint index)
+typedef GLboolean (*glIsEnabledi_PTR)(GLenum target, GLuint index);
+GLboolean APIENTRY_GL4ES gl4es_glIsEnabledi(GLenum target, GLuint index)
 {
-    LOAD_GLES(glIsEnablediEXT);
-    return gles_glIsEnablediEXT(target, index);
+    LOAD_GLES(glIsEnabledi);
+    return gles_glIsEnabledi(target, index);
 }
 
-typedef void (*glBlendFunciEXT_PTR)(GLuint buf, GLenum src, GLenum dst);
-void APIENTRY_GL4ES APIENTRY_GL4ES gl4es_glBlendFunciEXT(GLuint buf, GLenum src, GLenum dst)
+typedef void (*glBlendFunci_PTR)(GLuint buf, GLenum src, GLenum dst);
+void APIENTRY_GL4ES APIENTRY_GL4ES gl4es_glBlendFunci(GLuint buf, GLenum src, GLenum dst)
 {
-    LOAD_GLES(glBlendFunciEXT);
-    gles_glBlendFunciEXT(buf, src, dst);
+    LOAD_GLES(glBlendFunci);
+    gles_glBlendFunci(buf, src, dst);
 }
 
-typedef void (*glBlendEquationiEXT_PTR)(GLuint buf, GLenum mode);
-void APIENTRY_GL4ES gl4es_glBlendEquationiEXT(GLuint buf, GLenum mode)
+typedef void (*glBlendEquationi_PTR)(GLuint buf, GLenum mode);
+void APIENTRY_GL4ES gl4es_glBlendEquationi(GLuint buf, GLenum mode)
 {
-    LOAD_GLES(glBlendEquationiEXT);
-    gles_glBlendEquationiEXT(buf, mode);
+    LOAD_GLES(glBlendEquationi);
+    gles_glBlendEquationi(buf, mode);
 }
 
-typedef void (*glBlendFuncSeparateiEXT_PTR)(GLuint buf, GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
-void APIENTRY_GL4ES gl4es_glBlendFuncSeparateiEXT(GLuint buf, GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)
+typedef void (*glBlendFuncSeparatei_PTR)(GLuint buf, GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
+void APIENTRY_GL4ES gl4es_glBlendFuncSeparatei(GLuint buf, GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)
 {
-    LOAD_GLES(glBlendFuncSeparateiEXT);
-    gles_glBlendFuncSeparateiEXT(buf, srcRGB, dstRGB, srcAlpha, dstAlpha);
+    LOAD_GLES(glBlendFuncSeparatei);
+    gles_glBlendFuncSeparatei(buf, srcRGB, dstRGB, srcAlpha, dstAlpha);
 }
 
 void gl4es_saveCurrentFBO() {
@@ -2138,10 +2138,20 @@ AliasExport(void, glClearNamedFramebufferfv, EXT,
 AliasExport(void, glClearNamedFramebufferfi, EXT,
             (GLuint framebuffer, GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil));
 
-AliasExport(void, glEnableiEXT, ,(GLenum target, GLuint index));
-AliasExport(void, glDisableiEXT, ,(GLenum target, GLuint index));
-AliasExport(void, glColorMaskiEXT, ,(GLuint buf, GLboolean r, GLboolean g, GLboolean b, GLboolean a));
-AliasExport(GLboolean, glIsEnablediEXT, ,(GLenum target, GLuint index));
-AliasExport(void, glBlendFunciEXT, ,(GLuint buf, GLenum src, GLenum dst));
-AliasExport(void, glBlendEquationiEXT, ,(GLuint buf, GLenum mode));
-AliasExport(void, glBlendFuncSeparateiEXT, ,(GLuint buf, GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha));
+AliasExport(void, glEnablei, ,(GLenum target, GLuint index));
+AliasExport(void, glDisablei, ,(GLenum target, GLuint index));
+AliasExport(void, glColorMaski, ,(GLuint buf, GLboolean r, GLboolean g, GLboolean b, GLboolean a));
+/*
+AliasExport(GLboolean, glIsEnabledi, ,(GLenum target, GLuint index));
+AliasExport(void, glBlendFunci, ,(GLuint buf, GLenum src, GLenum dst));
+AliasExport(void, glBlendEquationi, ,(GLuint buf, GLenum mode));
+AliasExport(void, glBlendFuncSeparatei, ,(GLuint buf, GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha));
+
+AliasExport(void, glEnablei, EXT,(GLenum target, GLuint index));
+AliasExport(void, glDisablei, EXT,(GLenum target, GLuint index));
+AliasExport(void, glColorMaski, EXT,(GLuint buf, GLboolean r, GLboolean g, GLboolean b, GLboolean a));
+AliasExport(GLboolean, glIsEnabledi, EXT,(GLenum target, GLuint index));
+AliasExport(void, glBlendFunci, EXT,(GLuint buf, GLenum src, GLenum dst));
+AliasExport(void, glBlendEquationi, EXT,(GLuint buf, GLenum mode));
+AliasExport(void, glBlendFuncSeparatei, EXT,(GLuint buf, GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha));
+*/

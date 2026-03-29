@@ -84,7 +84,22 @@ void APIENTRY_GL4ES gl4es_glTexImage3D(GLenum target, GLint level, GLint interna
 #endif
     }
 
-    internal_convert(&internalformat, &type, &format);
+    bool bgra_swizzle = false;
+    if(format == GL_LUMINANCE) {
+        format = GL_RED;
+        internalformat = GL_R8;
+    }
+    else if(format == GL_BGRA) {
+        bgra_swizzle = true;
+        format = GL_RGBA;
+        internalformat = GL_RGBA;
+    }
+    else
+    {
+        SHUT_LOGD("gl4es_glTexImage3D format(internal)=%s(%s), type=%s", PrintEnum(format), PrintEnum(internalformat), PrintEnum(type));
+    }
+
+ //   internal_convert(&internalformat, &type, &format);
 
     if (data == NULL && (internalformat == GL_RGB16F || internalformat == GL_RGBA16F))
         internal2format_type(&internalformat, &format, &type);
@@ -229,6 +244,12 @@ void APIENTRY_GL4ES gl4es_glTexImage3D(GLenum target, GLint level, GLint interna
 
     noerrorShim();
     LOAD_GLES3(glTexImage3D);
+
+    if (bgra_swizzle) {
+        gl4es_glTexParameteri(target, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+        gl4es_glTexParameteri(target, GL_TEXTURE_SWIZZLE_B, GL_RED);
+    }
+
     gles_glTexImage3D(target, level, internalformat, width, height, depth, border, format, type, data);
 
     if (glstate->bound_changed < glstate->texture.active + 1) glstate->bound_changed = glstate->texture.active + 1;
@@ -275,6 +296,9 @@ static void* rgb565_to_rgba8_3d(int width, int height, int depth, const void* da
 void APIENTRY_GL4ES gl4es_glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset,
                                           GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type,
                                           const GLvoid* data) {
+
+
+SHUT_LOGD("gl4es_glTexSubimageImage3D format=%s, type=%s data=%s \n", PrintEnum(format), PrintEnum(type), (data==NULL)?"false":"true");
 
     if (width == 0 || height == 0 || depth == 0) {
         DBG(SHUT_LOGE("Error: width, height or depth is zero."))

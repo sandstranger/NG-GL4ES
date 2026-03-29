@@ -597,7 +597,7 @@ void APIENTRY_GL4ES gl4es_glGetTexLevelParameterfv(GLenum target, GLint level, G
     // simplification: (mostly) not taking "target" into account here
     FLUSH_BEGINEND;
 
-    if (target == GL_TEXTURE_BUFFER || target == target == GL_TEXTURE_3D) {
+    if (target == GL_TEXTURE_BUFFER || target == GL_TEXTURE_3D) {
         LOAD_GLES(glGetTexLevelParameterfv);
         gles_glGetTexLevelParameterfv(target, level, pname, params);
         return;

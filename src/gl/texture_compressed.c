@@ -365,10 +365,33 @@ void APIENTRY_GL4ES gl4es_glCompressedTexImage2D(GLenum target, GLint level, GLe
         bound->wanted_internal = bound->internalformat = internalformat;
         bound->valid = 1;
 
+        if (level/*generateMipmaps && globals4es.dxtmipmap*/) {
+            // not automipmap yet? then set it...
+            bound->mipmap_need = 1;
+            // and upload higher level here...
+            int leveln = level, nww = width, nhh = height;
+            void* ndata = pixels;
+            while (nww != 1 || nhh != 1) {
+                GLvoid* out = ndata;
+                if (half) { // half can be null if no data...
+                    pixel_halfscale(ndata, &out, nww, nhh, GL_RGBA, GL_UNSIGNED_BYTE);
+                    if (out != ndata && ndata != pixels) free(ndata);
+                    ndata = out;
+                }
+                nww = nlevel(nww, 1);
+                nhh = nlevel(nhh, 1);
+                if (half) pixel_convert(ndata, &out, nww, nhh, GL_RGBA, GL_UNSIGNED_BYTE, format, type, 0, 1);
+                ++leveln;
+                gl4es_glTexImage2D(target, leveln, new_intformat, nww, nhh, border, format, type, out);
+                if (out != ndata) free(out);
+            }
+            bound->mipmap_auto = 1;
+        }
+
         if (oldalign != 1) gl4es_glPixelStorei(GL_UNPACK_ALIGNMENT, oldalign);
         if (half != pixels) free(half);
         if (pixels != datab) free(pixels);
-    }  else if (isDXTc(internalformat) && globals4es.dxt != 3) {
+    } else if (isDXTc(internalformat) && globals4es.dxt != 3) {
         //SHUT_LOGD("level %i width %i height %i max level %i\n", level, width, height, bound->max_level);
         LOAD_GLES(glCompressedTexImage2D);
         bound->alpha = (internalformat == GL_COMPRESSED_RGB_S3TC_DXT1_EXT) ? 0 : 1;
@@ -385,6 +408,11 @@ void APIENTRY_GL4ES gl4es_glCompressedTexImage2D(GLenum target, GLint level, GLe
         if (glstate->fpe_state && glstate->fpe_bound_changed < glstate->texture.active+1)
             glstate->fpe_bound_changed = glstate->texture.active+1;
         gles_glCompressedTexImage2D(rtarget, level, internalformat, width, height, border, imageSize, datab);
+
+        if (generateMipmaps && !globals4es.dxtmipmap) {
+            gl4es_glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, level);
+        }
+
         if (generateMipmaps && globals4es.dxtmipmap) {
             // not automipmap yet? then set it...
             bound->mipmap_need = 1;
@@ -589,6 +617,8 @@ void APIENTRY_GL4ES gl4es_glCompressedTexImage1D(GLenum target, GLint level, GLe
 void APIENTRY_GL4ES gl4es_glCompressedTexImage3D(GLenum target, GLint level, GLenum internalformat, GLsizei width,
                                                  GLsizei height, GLsizei depth, GLint border, GLsizei imageSize,
                                                  const GLvoid* data) {
+
+SHUT_LOGE("gl4es_glCompressedTexImage3D")
 
     gl4es_glCompressedTexImage2D(target, level, internalformat, width, height, border, imageSize, data);
 }
