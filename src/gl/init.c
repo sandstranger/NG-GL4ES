@@ -823,17 +823,9 @@ void initialize_gl4es() {
 }
 
 __attribute__((used)) __attribute__((visibility("default")))
-void updateSimpleShaderConvState(int shaderConvState){
-    simpleShaderConvState = shaderConvState;
-}
-
-__attribute__((used)) __attribute__((visibility("default")))
-void updateEnableAngleState(bool enableAngle){
+void initializeGL4ESData(bool enableSimpleShaderConv,bool enableAngle,int targetESVersion){
+    simpleShaderConvState = enableSimpleShaderConv ? 1 : 0;
     g_enableAngle = enableAngle;
-}
-
-__attribute__((used)) __attribute__((visibility("default")))
-void setESVersion(int targetESVersion){
     g_esversion = targetESVersion;
 }
 
