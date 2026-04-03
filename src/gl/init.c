@@ -833,7 +833,7 @@ void updateEnableAngleState(bool enableAngle){
 }
 
 __attribute__((used)) __attribute__((visibility("default")))
-void setESVersion(bool targetESVersion){
+void setESVersion(int targetESVersion){
     g_esversion = targetESVersion;
 }
 
