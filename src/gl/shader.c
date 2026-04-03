@@ -968,6 +968,13 @@ void APIENTRY_GL4ES gl4es_glShaderSource(GLuint shader, GLsizei count, const GLc
             // ===================================================================
         }
 
+        if (glshader->converted){
+            extern char* sanitize_glsl(const char* inputString);
+            char *shaderToClean = glshader->converted;
+            glshader->converted = sanitize_glsl(shaderToClean);
+            free(shaderToClean);
+        }
+
         GLchar* finalSource = (glshader->converted) ? glshader->converted : glshader->source;
         char* tempSource = NULL;
         if (globals4es.es >= 3 && globals4es.esversion >= 300 && glshader->is_converted_essl_320) {

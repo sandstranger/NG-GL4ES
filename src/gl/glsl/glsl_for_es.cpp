@@ -908,3 +908,82 @@ std::string GLSLtoGLSLES_2(const char* glsl_code, GLenum glsl_type, unsigned int
     }
     return essl;
 }
+
+static bool starts_with(const std::string& s, const char* p) {
+    return s.compare(0, strlen(p), p) == 0;
+}
+
+static std::string fix_precision_highp_only(const std::string& in) {
+    std::istringstream iss(in);
+    std::string line;
+
+    std::string out;
+    out.reserve(in.size());
+
+    bool has_highp = false;
+
+    while (std::getline(iss, line)) {
+        size_t i = 0;
+        while (i < line.size() && std::isspace((unsigned char)line[i])) i++;
+        std::string trimmed = line.substr(i);
+
+        if (starts_with(trimmed, "precision")) {
+            if (trimmed.find("highp") != std::string::npos) {
+                if (!has_highp) {
+                    out += "precision highp float;\n";
+                    out += "precision highp int;\n";
+                    has_highp = true;
+                }
+            }
+
+            continue;
+        }
+
+        out += line;
+        out += '\n';
+    }
+
+    return out;
+}
+
+extern "C" char* sanitize_glsl(const char* inputString) {
+    std::string in = fix_precision_highp_only(inputString);
+    std::string out;
+    out.reserve(in.size());
+
+    bool prev_space = false;
+    bool prev_newline = true;
+
+    for (size_t i = 0; i < in.size(); i++) {
+        char c = in[i];
+
+        if (c == '\r')
+            continue;
+
+        if (c == '\n') {
+            if (!prev_newline) {
+                out += '\n';
+                prev_newline = true;
+            }
+            prev_space = false;
+            continue;
+        }
+
+        if (std::isspace((unsigned char)c)) {
+            if (!prev_space && !prev_newline) {
+                out += ' ';
+                prev_space = true;
+            }
+            continue;
+        }
+
+        out += c;
+        prev_space = false;
+        prev_newline = false;
+    }
+
+    while (!out.empty() && (out.back() == '\n' || out.back() == ' '))
+        out.pop_back();
+
+    return strdup(out.c_str());
+}

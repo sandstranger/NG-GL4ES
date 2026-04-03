@@ -28,6 +28,7 @@
 
 int simpleShaderConvState = 1;
 bool g_enableAngle = false;
+static int g_esversion = 300;
 
 #if defined(__EMSCRIPTEN__)
 #define NO_INIT_CONSTRUCTOR
@@ -164,8 +165,6 @@ void initialize_gl4es() {
     env(LIBGL_XREFRESH, globals4es.xrefresh, "xrefresh will be called on cleanup");
     env(LIBGL_STACKTRACE, globals4es.stacktrace, "stacktrace will be printed on crash");
 
-    globals4es.dxtmipmap = 1;
-
     env(LIBGL_INSTANCING, globals4es.instancing, "Using HW glDrawElementsInstanced");
 
     const int LIBGL_FB_ENV_VAR =
@@ -222,7 +221,7 @@ void initialize_gl4es() {
     }
 
     globals4es.es = 3;
-    globals4es.esversion = 300;
+    globals4es.esversion = g_esversion;
 
 /*    globals4es.es = ReturnEnvVarInt("LIBGL_ES");
     switch (globals4es.es) {
@@ -760,7 +759,7 @@ void initialize_gl4es() {
         env(LIBGL_SHADERBLEND, globals4es.shaderblend, "Blend will be handled in shaders");
     }
 
-    globals4es.dxt = 1;
+    globals4es.dxt = 0;
 /*
     switch(ReturnEnvVarInt("LIBGL_DXT")) {
     	case 1:
@@ -831,6 +830,11 @@ void updateSimpleShaderConvState(int shaderConvState){
 __attribute__((used)) __attribute__((visibility("default")))
 void updateEnableAngleState(bool enableAngle){
     g_enableAngle = enableAngle;
+}
+
+__attribute__((used)) __attribute__((visibility("default")))
+void setESVersion(bool targetESVersion){
+    g_esversion = targetESVersion;
 }
 
 #ifndef NOX11
