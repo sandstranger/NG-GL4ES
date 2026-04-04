@@ -913,7 +913,7 @@ static bool starts_with(const std::string& s, const char* p) {
     return s.compare(0, strlen(p), p) == 0;
 }
 
-std::string replace_all_copy(std::string s, const std::string& from, const std::string& to) {
+static std::string replace_all_copy(std::string s, const std::string& from, const std::string& to) {
     if (from.empty()) return s;
 
     size_t pos = 0;
