@@ -29,6 +29,7 @@
 int simpleShaderConvState = 1;
 bool g_enableAngle = false;
 static int g_esversion = 300;
+bool g_nohighp = false;
 
 #if defined(__EMSCRIPTEN__)
 #define NO_INIT_CONSTRUCTOR
@@ -303,7 +304,8 @@ void initialize_gl4es() {
 #else
     int gl4es_notest = IsEnvVarTrue("LIBGL_NOTEST");
 #endif
-    env(LIBGL_NOHIGHP, globals4es.nohighp, "Do not use HIGHP in fragment shader even if detected");
+    globals4es.nohighp = g_nohighp ? 1 : 0;
+//    env(LIBGL_NOHIGHP, globals4es.nohighp, "Do not use HIGHP in fragment shader even if detected");
 
     globals4es.floattex = ReturnEnvVarIntDef("LIBGL_FLOAT", 1);
     switch (globals4es.floattex) {
@@ -823,10 +825,12 @@ void initialize_gl4es() {
 }
 
 __attribute__((used)) __attribute__((visibility("default")))
-void initializeGL4ESData(bool enableSimpleShaderConv,bool enableAngle,int targetESVersion){
+void initializeGL4ESData(bool enableSimpleShaderConv,bool enableAngle,int targetESVersion,
+                         bool nohighp){
     simpleShaderConvState = enableSimpleShaderConv ? 1 : 0;
     g_enableAngle = enableAngle;
     g_esversion = targetESVersion;
+    g_nohighp = nohighp;
 }
 
 #ifndef NOX11

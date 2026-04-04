@@ -913,26 +913,43 @@ static bool starts_with(const std::string& s, const char* p) {
     return s.compare(0, strlen(p), p) == 0;
 }
 
-static std::string fix_precision_highp_only(const std::string& in) {
-    std::istringstream iss(in);
-    std::string line;
+std::string replace_all_copy(std::string s, const std::string& from, const std::string& to) {
+    if (from.empty()) return s;
 
-    std::string out;
-    out.reserve(in.size());
+    size_t pos = 0;
+    while ((pos = s.find(from, pos)) != std::string::npos) {
+        s.replace(pos, from.length(), to);
+        pos += to.length();
+    }
+    return s;
+}
 
-    bool has_highp = false;
+extern bool g_nohighp;
 
-    while (std::getline(iss, line)) {
+static std::string fix_precisions(const std::string& in) {
+    using namespace std;
+    const string mediump_precision = "mediump";
+    const string highp_precision = "highp";
+    const string precision_touse = g_nohighp ? mediump_precision : highp_precision;
+    const string input_string = replace_all_copy(in, g_nohighp ? highp_precision : mediump_precision, precision_touse);
+    istringstream iss(input_string);
+    string line;
+    string out;
+    out.reserve(input_string.size());
+
+    bool has_presicion = false;
+
+    while (getline(iss, line)) {
         size_t i = 0;
-        while (i < line.size() && std::isspace((unsigned char)line[i])) i++;
-        std::string trimmed = line.substr(i);
+        while (i < line.size() && isspace((unsigned char)line[i])) i++;
+        string trimmed = line.substr(i);
 
         if (starts_with(trimmed, "precision")) {
-            if (trimmed.find("highp") != std::string::npos) {
-                if (!has_highp) {
-                    out += "precision highp float;\n";
-                    out += "precision highp int;\n";
-                    has_highp = true;
+            if (trimmed.find(precision_touse) != string::npos) {
+                if (!has_presicion) {
+                    out += "precision" + precision_touse + "float;\n";
+                    out += "precision" + precision_touse +" int;\n";
+                    has_presicion = true;
                 }
             }
 
@@ -947,7 +964,7 @@ static std::string fix_precision_highp_only(const std::string& in) {
 }
 
 extern "C" char* sanitize_glsl(const char* inputString) {
-    std::string in = fix_precision_highp_only(inputString);
+    std::string in = fix_precisions(inputString);
     std::string out;
     out.reserve(in.size());
 
