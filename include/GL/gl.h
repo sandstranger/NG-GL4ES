@@ -784,7 +784,7 @@ GLAPI void GLAPIENTRY glClipPlane( GLenum plane, const GLdouble *equation );
 
 GLAPI void GLAPIENTRY glGetClipPlane( GLenum plane, GLdouble *equation );
 
-//GLAPI void GLAPIENTRY glDrawBuffer( GLenum mode );
+GLAPI void GLAPIENTRY glDrawBuffer( GLenum mode );
 
 GLAPI void GLAPIENTRY glReadBuffer( GLenum mode );
 
@@ -1008,6 +1008,13 @@ GLAPI void GLAPIENTRY glColor4ui( GLuint red, GLuint green,
 GLAPI void GLAPIENTRY glColor4us( GLushort red, GLushort green,
                                     GLushort blue, GLushort alpha );
 
+GLAPI void GLAPIENTRY glEndQuery (GLenum target);
+GLAPI void GLAPIENTRY glBeginQuery (GLenum target, GLuint id);
+GLAPI void GLAPIENTRY glGenQueries (GLsizei n, GLuint* ids);
+GLAPI void GLAPIENTRY glBindVertexArray (GLuint array);
+GLAPI void GLAPIENTRY glBlitFramebuffer (GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
+GLAPI void GLAPIENTRY glBindFramebuffer (GLenum target, GLuint framebuffer);
+GLAPI void GLAPIENTRY glStencilOpSeparate (GLenum face, GLenum fail, GLenum zfail, GLenum zpass);
 
 GLAPI void GLAPIENTRY glColor3bv( const GLbyte *v );
 GLAPI void GLAPIENTRY glColor3dv( const GLdouble *v );
