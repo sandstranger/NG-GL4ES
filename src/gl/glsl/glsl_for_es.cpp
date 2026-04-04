@@ -913,15 +913,47 @@ static bool starts_with(const std::string& s, const char* p) {
     return s.compare(0, strlen(p), p) == 0;
 }
 
-static std::string replace_all_copy(std::string s, const std::string& from, const std::string& to) {
+static bool is_word_char(char c){
+    return std::isalnum((unsigned char)c) || c == '_';
+}
+
+static std::string replace_all_word(const std::string& s,const std::string& from, const std::string& to){
     if (from.empty()) return s;
 
-    size_t pos = 0;
-    while ((pos = s.find(from, pos)) != std::string::npos) {
-        s.replace(pos, from.length(), to);
-        pos += to.length();
+    std::string out;
+    out.reserve(s.size());
+
+    size_t i = 0;
+
+    while (i < s.size())
+    {
+        size_t pos = s.find(from, i);
+
+        if (pos == std::string::npos)
+        {
+            out.append(s, i, std::string::npos);
+            break;
+        }
+
+        out.append(s, i, pos - i);
+
+        bool left_ok = (pos == 0) || !is_word_char(s[pos - 1]);
+        bool right_ok = (pos + from.size() >= s.size()) ||
+                        !is_word_char(s[pos + from.size()]);
+
+        if (left_ok && right_ok)
+        {
+            out += to;
+        }
+        else
+        {
+            out.append(from);
+        }
+
+        i = pos + from.size();
     }
-    return s;
+
+    return out;
 }
 
 extern bool g_nohighp;
@@ -931,7 +963,7 @@ static std::string fix_precisions(const std::string& in) {
     const string mediump_precision = "mediump";
     const string highp_precision = "highp";
     const string precision_touse = g_nohighp ? mediump_precision : highp_precision;
-    const string input_string = replace_all_copy(in, g_nohighp ? highp_precision : mediump_precision, precision_touse);
+    const string input_string = replace_all_word(in, g_nohighp ? highp_precision : mediump_precision, precision_touse);
     istringstream iss(input_string);
     string line;
     string out;
@@ -947,8 +979,8 @@ static std::string fix_precisions(const std::string& in) {
         if (starts_with(trimmed, "precision")) {
             if (trimmed.find(precision_touse) != string::npos) {
                 if (!has_presicion) {
-                    out += "precision" + precision_touse + "float;\n";
-                    out += "precision" + precision_touse +" int;\n";
+                    out += "precision " + precision_touse + " float;\n";
+                    out += "precision " + precision_touse + " int;\n";
                     has_presicion = true;
                 }
             }
