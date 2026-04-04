@@ -4316,6 +4316,8 @@ extern "C"
     typedef void(APIENTRY_GLES* glTexParameterxv_PTR)(glTexParameterxv_ARG_EXPAND);
     void APIENTRY_GL4ES gl4es_glTexSubImage2D(glTexSubImage2D_ARG_EXPAND);
     typedef void(APIENTRY_GLES* glTexSubImage2D_PTR)(glTexSubImage2D_ARG_EXPAND);
+    void APIENTRY_GL4ES gl4es_glTexStorage2DMultisample(GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations);
+    typedef void(APIENTRY_GLES* glTexStorage2DMultisample_PTR)(GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations);
     void APIENTRY_GL4ES gl4es_glTexSubImage3D(glTexSubImage3D_ARG_EXPAND);
     typedef void(APIENTRY_GLES* glTexSubImage3D_PTR)(glTexSubImage3D_ARG_EXPAND);
     void APIENTRY_GL4ES gl4es_glTranslatef(glTranslatef_ARG_EXPAND);

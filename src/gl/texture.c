@@ -2274,6 +2274,11 @@ static void* rgb565_to_rgba8(int width, int height, const void* data) {
     return out;
 }
 
+void APIENTRY_GL4ES gl4es_glTexStorage2DMultisample (GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations) {
+    LOAD_GLES3(glTexStorage2DMultisample)
+    gles_glTexStorage2DMultisample(target,samples,internalformat,width,height,fixedsamplelocations);
+}
+
 void APIENTRY_GL4ES gl4es_glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width,
                                           GLsizei height, GLenum format, GLenum type, const GLvoid* data) {
     if (width == 0 || height == 0) {
@@ -2608,6 +2613,7 @@ AliasExport(void, glTexSubImage1D, ,
 AliasExport(GLboolean, glIsTexture, , (GLuint texture));
 
 // TexStorage
+AliasExport(void, glTexStorage2DMultisample, , (GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations));
 AliasExport(void, glTexStorage1D, , (GLenum target, GLsizei levels, GLenum internalformat, GLsizei width));
 AliasExport(void, glTexStorage2D, ,
             (GLenum target, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height));

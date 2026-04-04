@@ -204,6 +204,7 @@ _EX(glTexParameteriv);
 _EX(glTexParameterx);
 _EX(glTexParameterxv);
 _EX(glTexSubImage2D);
+_EX(glTexStorage2DMultisample);
 _EX(glTranslatef);
 _EX(glTranslatex);
 _EX(glUniform1f);
