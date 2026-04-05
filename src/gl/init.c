@@ -252,7 +252,7 @@ void initialize_gl4es() {
     // SET_CONFIG_STRING(force_egl_lib);
     // SET_CONFIG_STRING(force_gles_lib);
 
-    globals4es.gl = 41;//ReturnEnvVarInt("LIBGL_GL");
+    globals4es.gl = 32;//ReturnEnvVarInt("LIBGL_GL");
     switch (globals4es.gl) {
     case 10:
     case 11:

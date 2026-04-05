@@ -1008,6 +1008,7 @@ GLAPI void GLAPIENTRY glColor4ui( GLuint red, GLuint green,
 GLAPI void GLAPIENTRY glColor4us( GLushort red, GLushort green,
                                     GLushort blue, GLushort alpha );
 
+unsigned int getGLESVersion();
 GLAPI void GLAPIENTRY glEndQuery (GLenum target);
 GLAPI void GLAPIENTRY glBeginQuery (GLenum target, GLuint id);
 GLAPI void GLAPIENTRY glGenQueries (GLsizei n, GLuint* ids);

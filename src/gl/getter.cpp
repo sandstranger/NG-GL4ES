@@ -383,6 +383,11 @@ extern "C"
         return getBeforeThirdSpace(ESVersion);
     }
 
+    __attribute__((used)) __attribute__((visibility("default")))
+    unsigned int getGLESVersion (){
+        return globals4es.esversion ? globals4es.esversion : 300;
+    }
+
     static std::string rendererString;
     static std::string versionString;
     const GLubyte* APIENTRY_GL4ES gl4es_glGetString(GLenum name) {
