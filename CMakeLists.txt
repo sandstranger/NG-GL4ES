@@ -11,10 +11,10 @@ endif()
 
 set(ENABLE_RTTI                ON  CACHE BOOL "Enables RTTI (will be took by glslang)" FORCE)
 set(ENABLE_HLSL                OFF CACHE BOOL "Disable HLSL input for glslang" FORCE)
-set(BUILD_EXTERNAL             OFF CACHE BOOL "Disable build external dependencies for glslang" FORCE)
+set(BUILD_EXTERNAL             ON CACHE BOOL "Disable build external dependencies for glslang" FORCE)
+set(ALLOW_EXTERNAL_SPIRV_TOOLS ON CACHE BOOL "" FORCE)
 set(ENABLE_GLSLANG_BINARIES    OFF CACHE BOOL "Disable glslangValidator/spirv-remap" FORCE)
-set(ENABLE_OPT                 OFF CACHE BOOL "Disable SPIRV-Tools opt usage in glslang" FORCE)
-set(BUILD_EXTERNAL             OFF CACHE BOOL "Don't build external deps in External/" FORCE)
+set(ENABLE_OPT                 ON CACHE BOOL  "Disable SPIRV-Tools opt usage in glslang" FORCE)
 
 set(SPIRV_CROSS_ENABLE_C_API   ON  CACHE BOOL "Enable C API" FORCE)
 set(SPIRV_CROSS_ENABLE_GLSL    ON  CACHE BOOL "Enable GLSL backend" FORCE)
@@ -29,12 +29,14 @@ set(ENABLE_PCH                 OFF  CACHE BOOL "Disable pch" FORCE)
 set(SPIRV_SKIP_TESTS           ON  CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS          OFF  CACHE BOOL "" FORCE)
 set(SPIRV_WERROR               OFF  CACHE BOOL "" FORCE)
+set(SPIRV_TOOLS_BUILD_STATIC   ON  CACHE BOOL "" FORCE)
+set (SPIRV_TOOLS_LIBRARY_TYPE  "STATIC" CACHE STRING "" FORCE)
 
 add_definitions(-DNO_INIT_CONSTRUCTOR)
 
+add_subdirectory(3rdparty/SPIRV-Tools)
 add_subdirectory(3rdparty/glslang)
 add_subdirectory(3rdparty/SPIRV-Cross)
-add_subdirectory(3rdparty/SPIRV-Tools)
 
 enable_language(CXX)
 
