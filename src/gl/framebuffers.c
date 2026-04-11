@@ -1,5 +1,5 @@
 #include "framebuffers.h"
- 
+
 #if !defined(ANDROID) && !defined(AMIGAOS4) && !defined(__EMSCRIPTEN__) && !defined(__APPLE__)
 #include <execinfo.h>
 #endif
@@ -2019,6 +2019,7 @@ void APIENTRY_GL4ES gl4es_glBlendFuncSeparatei(GLuint buf, GLenum srcRGB, GLenum
 {
     LOAD_GLES(glBlendFuncSeparatei);
     gles_glBlendFuncSeparatei(buf, srcRGB, dstRGB, srcAlpha, dstAlpha);
+
 }
 
 void gl4es_saveCurrentFBO() {
@@ -2141,7 +2142,6 @@ AliasExport(void, glClearNamedFramebufferfi, EXT,
 AliasExport(void, glEnablei, ,(GLenum target, GLuint index));
 AliasExport(void, glDisablei, ,(GLenum target, GLuint index));
 AliasExport(void, glColorMaski, ,(GLuint buf, GLboolean r, GLboolean g, GLboolean b, GLboolean a));
-/*
 AliasExport(GLboolean, glIsEnabledi, ,(GLenum target, GLuint index));
 AliasExport(void, glBlendFunci, ,(GLuint buf, GLenum src, GLenum dst));
 AliasExport(void, glBlendEquationi, ,(GLuint buf, GLenum mode));
@@ -2154,4 +2154,4 @@ AliasExport(GLboolean, glIsEnabledi, EXT,(GLenum target, GLuint index));
 AliasExport(void, glBlendFunci, EXT,(GLuint buf, GLenum src, GLenum dst));
 AliasExport(void, glBlendEquationi, EXT,(GLuint buf, GLenum mode));
 AliasExport(void, glBlendFuncSeparatei, EXT,(GLuint buf, GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha));
-*/
+

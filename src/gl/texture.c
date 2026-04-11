@@ -415,6 +415,14 @@ void internal2format_type(GLenum* internalformat, GLenum* format, GLenum* type) 
             *format = GL_RGBA;
             *type = GL_FLOAT;
             break;
+        case GL_R16F:
+            *format = GL_RED;
+            *type = GL_HALF_FLOAT;
+            break;
+        case GL_RG16F:
+            *format = GL_RG;
+            *type = GL_HALF_FLOAT;
+            break;
         case GL_RGB16F:
             *format = GL_RGB;
             *type = GL_HALF_FLOAT;
@@ -422,6 +430,22 @@ void internal2format_type(GLenum* internalformat, GLenum* format, GLenum* type) 
         case GL_RGB32F:
             *format = GL_RGB;
             *type =  GL_FLOAT;
+            break;
+        case GL_R32F:
+            *format = GL_RED;
+            *type = GL_FLOAT;
+            break;
+        case GL_RG32F:
+            *format = GL_RG;
+            *type = GL_FLOAT;
+            break;
+        case GL_RGB32F:
+            *format = GL_RGB;
+            *type = GL_FLOAT;
+            break;
+        case GL_RGBA32F:
+            *format = GL_RGBA;
+            *type = GL_FLOAT;
             break;
         default:
             DBG(SHUT_LOGE("LIBGL: Warning, unknown Internalformat (%s)\n", PrintEnum(*internalformat)));

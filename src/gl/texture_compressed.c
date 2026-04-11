@@ -219,8 +219,7 @@ GLvoid *compressDXTc(GLsizei width, GLsizei height, GLenum format, const GLvoid 
 void APIENTRY_GL4ES gl4es_glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei width,
                                                  GLsizei height, GLint border, GLsizei imageSize, const GLvoid* data) {
 
-    if(!data) return;
-    GLboolean generateMipmaps = (imageSize < 0) ? true : false;
+    if (imageSize < 0) imageSize *= -1;
 
     const GLuint itarget = what_target(target);
     const GLuint rtarget = map_tex_target(target);
@@ -364,7 +363,6 @@ void APIENTRY_GL4ES gl4es_glCompressedTexImage2D(GLenum target, GLint level, GLe
         bound->compressed = 1;
         bound->wanted_internal = bound->internalformat = internalformat;
         bound->valid = 1;
-
         if (level/*generateMipmaps && globals4es.dxtmipmap*/) {
             // not automipmap yet? then set it...
             bound->mipmap_need = 1;
@@ -392,7 +390,7 @@ void APIENTRY_GL4ES gl4es_glCompressedTexImage2D(GLenum target, GLint level, GLe
         if (half != pixels) free(half);
         if (pixels != datab) free(pixels);
     } else if (isDXTc(internalformat) && globals4es.dxt != 3) {
-        //SHUT_LOGD("level %i width %i height %i max level %i\n", level, width, height, bound->max_level);
+        //SHUT_LOGD("level %i width %i height %i base level %i max level %i\n", level, width, height, bound->base_level, bound->max_level);
         LOAD_GLES(glCompressedTexImage2D);
         bound->alpha = (internalformat == GL_COMPRESSED_RGB_S3TC_DXT1_EXT) ? 0 : 1;
         bound->format = internalformat;
@@ -409,11 +407,10 @@ void APIENTRY_GL4ES gl4es_glCompressedTexImage2D(GLenum target, GLint level, GLe
             glstate->fpe_bound_changed = glstate->texture.active+1;
         gles_glCompressedTexImage2D(rtarget, level, internalformat, width, height, border, imageSize, datab);
 
-        if (generateMipmaps && !globals4es.dxtmipmap) {
-            gl4es_glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, level);
-        }
+        LOAD_GLES(glTexParameteri);
+        gles_glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, level);
 
-        if (generateMipmaps && globals4es.dxtmipmap) {
+        if (level == bound->max_level && globals4es.dxtmipmap) {
             // not automipmap yet? then set it...
             bound->mipmap_need = 1;
             int simpleAlpha = 0;
@@ -451,6 +448,7 @@ void APIENTRY_GL4ES gl4es_glCompressedTexImage2D(GLenum target, GLint level, GLe
                 //SHUT_LOGD("generating compressed mip map\nlevel %i width %i height %i\n", leveln, nww, nhh);
                 GLuint mipmapSize = computeImageSize(nww, nhh, 1, internalformat);
                 GLvoid *compressedpixels = compressDXTc(nww, nhh, internalformat, out);
+                gles_glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, leveln);
                 gles_glCompressedTexImage2D(rtarget, leveln, internalformat, nww, nhh, border, mipmapSize, compressedpixels);
                 if(out!=ndata)
                     free(out);
@@ -628,129 +626,11 @@ void APIENTRY_GL4ES gl4es_glCompressedTexSubImage1D(GLenum target, GLint level, 
 
     gl4es_glCompressedTexSubImage2D(target, level, xoffset, 0, width, 1, format, imageSize, data);
 }
-
-
 void APIENTRY_GL4ES gl4es_glCompressedTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
                                                     GLint zoffset, GLsizei width, GLsizei height, GLsizei depth,
                                                     GLenum format, GLsizei imageSize, const GLvoid* data) {
 
-    gltexture_t* bound = gl4es_getCurrentTexture(target);
-    glbuffer_t* unpack = glstate->vao->unpack;
-    glstate->vao->unpack = nullptr;
-    GLvoid* datab = (GLvoid*)data;
-    if (unpack) datab += (uintptr_t)unpack->data;
-
-    LOAD_GLES3(glCompressedTexSubImage3D);
-    errorGL();
-
-    int simpleAlpha = 0;
-    int complexAlpha = 0;
-    int transparent0 = (format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT || format == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT) ? 1 : 0;
-
-    if ((!isFormatSupported(format) && isDXTc(format)) || (globals4es.dxt == 1 && isDXTc(format))) {
-        if (level) {
-            noerrorShim();
-            return;
-        }
-
-        int srgb = isDXTcSRGB(format);
-        int blocksize;
-        switch (format) {
-            case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
-            case GL_COMPRESSED_SRGB_S3TC_DXT1_EXT:
-            case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
-            case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT:
-                blocksize = 8;
-                break;
-            case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
-            case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
-            case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT:
-            case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT:
-                blocksize = 16;
-                break;
-            default:
-                gles_glCompressedTexSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth,
-                                               format, imageSize, datab);
-                return;
-        }
-
-        int blocksX = (width + 3) / 4;
-        int blocksY = (height + 3) / 4;
-        int layerSizeCompressed = blocksX * blocksY * blocksize;
-
-        int layersToProcess = depth;
-        if (imageSize < depth * layerSizeCompressed) {
-            layersToProcess = imageSize / layerSizeCompressed;
-            if (layersToProcess == 0) {
-                gles_glCompressedTexSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth,
-                                               format, imageSize, datab);
-                return;
-            }
-        }
-
-        GLvoid* overall = malloc(width * height * layersToProcess * 4);
-        if (!overall) {
-            gles_glCompressedTexSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth,
-                                           format, imageSize, datab);
-            return;
-        }
-
-        int totalSimpleAlpha = 0;
-        int totalComplexAlpha = 0;
-
-        for (int z = 0; z < layersToProcess; ++z) {
-            const GLvoid* src_layer = (const GLvoid*)((uintptr_t)datab + z * layerSizeCompressed);
-            GLvoid* dst_layer = (GLvoid*)((uintptr_t)overall + z * width * height * 4);
-
-            int layerSimple = 0, layerComplex = 0;
-
-            if ((width & 3) == 0 && (height & 3) == 0) {
-                GLvoid* pixels_layer = uncompressDXTc(width, height, format, layerSizeCompressed,
-                                                      transparent0, &layerSimple, &layerComplex, src_layer);
-                memcpy(dst_layer, pixels_layer, width * height * 4);
-                if (pixels_layer != src_layer) free(pixels_layer);
-            } else {
-                GLsizei nw = (width + 3) & ~3;
-                GLsizei nh = (height + 3) & ~3;
-                GLvoid* tmp = uncompressDXTc(nw, nh, format, layerSizeCompressed,
-                                             transparent0, &layerSimple, &layerComplex, src_layer);
-                uint8_t* src_tmp = (uint8_t*)tmp;
-                uint8_t* dst = (uint8_t*)dst_layer;
-                for (int y = 0; y < height; ++y) {
-                    memcpy(dst + y * width * 4, src_tmp + y * nw * 4, width * 4);
-                }
-                free(tmp);
-            }
-
-            if (srgb) {
-                pixel_srgb_inplace(dst_layer, width, height);
-            }
-
-            totalSimpleAlpha |= layerSimple;
-            totalComplexAlpha |= layerComplex;
-        }
-
-        simpleAlpha = totalSimpleAlpha;
-        complexAlpha = totalComplexAlpha;
-
-        gl4es_glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
-                              width, height, layersToProcess, GL_RGBA, GL_UNSIGNED_BYTE, overall);
-
-        free(overall);
-
-        if (layersToProcess < depth) {
-            const GLvoid* remaining_data = (const GLvoid*)((uintptr_t)datab + layersToProcess * layerSizeCompressed);
-            GLsizei remaining_size = imageSize - layersToProcess * layerSizeCompressed;
-            GLint remaining_zoffset = zoffset + layersToProcess;
-            GLsizei remaining_depth = depth - layersToProcess;
-
-            gles_glCompressedTexSubImage3D(target, level, xoffset, yoffset, remaining_zoffset,
-                                           width, height, remaining_depth, format, remaining_size, remaining_data);
-        }
-    } else {
-        gles_glCompressedTexSubImage3D(target, level, xoffset, yoffset, zoffset,
-                                       width, height, depth, format, imageSize, datab);
-    }
+    gl4es_glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, imageSize, data);
 }
 
 // Direct wrapper
