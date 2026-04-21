@@ -1494,9 +1494,9 @@ const char* const* fpe_CustomVertexShader(const char* initial, fpe_state_t* stat
     if (planes) {
         for (int i = 0; i < hardext.maxplanes; i++) {
             if ((planes >> i) & 1) {
-                sprintf(buff, "uniform highp vec4 _gl4es_ClipPlane_%d;\n", i);
+                sprintf(buff, "\nuniform highp vec4 _gl4es_ClipPlane_%d;\n", i);
                 ShadAppend(buff);
-                ++headline;
+                headline += 2;
                 sprintf(buff, "varying mediump float clippedvertex_%d;\n", i);
                 ShadAppend(buff);
                 ++headline;
