@@ -2044,6 +2044,12 @@ int GetShaderVersion(const char* source) {
 }
 
 GLboolean IsLegacyGLSLVersion(const char* source) {
+    extern int simpleShaderConvState;
+
+    if (!simpleShaderConvState){
+        return false;
+    }
+
     if (FindString(source, "#version 100") ||
         FindString(source, "#version 110") ||
         FindString(source, "#version 120") ||
