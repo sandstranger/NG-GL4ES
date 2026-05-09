@@ -28,7 +28,7 @@
 
 int simpleShaderConvState = 1;
 bool g_enableAngle = false;
-static int g_esversion = 300;
+int g_esversion = 300;
 bool g_nohighp = false;
 
 #if defined(__EMSCRIPTEN__)

@@ -1264,6 +1264,12 @@ static void (*internal_glMultiDrawElementsBaseVertex)(GLenum mode, const GLsizei
                                                       const GLint* basevertex);
 
 void init_internal_glDrawElementsBaseVertex() {
+    extern int g_esversion;
+    if (g_esversion >=320){
+        hardext.basevertex = 1;
+        hardext.multidraw = 1;
+    }
+
     if (hardext.basevertex) {
         LOGD("Switch to native basevertex implementation");
         internal_glDrawElementsBaseVertex = internal_glDrawElementsBaseVertex_gles32;

@@ -419,7 +419,9 @@ void GetHardwareExtensions(int notest) {
         gles_glGetIntegerv(GL_MAJOR_VERSION, &versionMajor);
         gles_glGetIntegerv(GL_MINOR_VERSION, &versionMinor);
 
-        if (versionMajor > 3 || (versionMajor == 3 && versionMinor >= 2)) { // GLES 3.2+
+        extern int g_esversion;
+
+        if (versionMajor > 3 || (versionMajor == 3 && versionMinor >= 2) || g_esversion >= 320) { // GLES 3.2+
             hardext.basevertex = 1;
         }
 
