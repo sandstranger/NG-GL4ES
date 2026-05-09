@@ -2044,9 +2044,9 @@ int GetShaderVersion(const char* source) {
 }
 
 GLboolean IsLegacyGLSLVersion(const char* source) {
-    extern int simpleShaderConvState;
+    extern int g_esversion;
 
-    if (!simpleShaderConvState){
+    if (g_esversion >= 320){
         return false;
     }
 
