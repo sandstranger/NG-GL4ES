@@ -629,8 +629,123 @@ void APIENTRY_GL4ES gl4es_glCompressedTexSubImage1D(GLenum target, GLint level, 
 void APIENTRY_GL4ES gl4es_glCompressedTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
                                                     GLint zoffset, GLsizei width, GLsizei height, GLsizei depth,
                                                     GLenum format, GLsizei imageSize, const GLvoid* data) {
+    gltexture_t* bound = gl4es_getCurrentTexture(target);
+    glbuffer_t* unpack = glstate->vao->unpack;
+    glstate->vao->unpack = nullptr;
+    GLvoid* datab = (GLvoid*)data;
+    if (unpack) datab += (uintptr_t)unpack->data;
 
-    gl4es_glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, imageSize, data);
+    LOAD_GLES3(glCompressedTexSubImage3D);
+    errorGL();
+
+    int simpleAlpha = 0;
+    int complexAlpha = 0;
+    int transparent0 = (format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT || format == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT) ? 1 : 0;
+
+    if ((!isFormatSupported(format) && isDXTc(format)) || (globals4es.dxt == 1 && isDXTc(format))) {
+        if (level) {
+            noerrorShim();
+            return;
+        }
+
+        int srgb = isDXTcSRGB(format);
+        int blocksize;
+        switch (format) {
+            case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
+            case GL_COMPRESSED_SRGB_S3TC_DXT1_EXT:
+            case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
+            case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT:
+                blocksize = 8;
+                break;
+            case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
+            case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
+            case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT:
+            case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT:
+                blocksize = 16;
+                break;
+            default:
+                gles_glCompressedTexSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth,
+                                               format, imageSize, datab);
+                return;
+        }
+
+        int blocksX = (width + 3) / 4;
+        int blocksY = (height + 3) / 4;
+        int layerSizeCompressed = blocksX * blocksY * blocksize;
+
+        int layersToProcess = depth;
+        if (imageSize < depth * layerSizeCompressed) {
+            layersToProcess = imageSize / layerSizeCompressed;
+            if (layersToProcess == 0) {
+                gles_glCompressedTexSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth,
+                                               format, imageSize, datab);
+                return;
+            }
+        }
+
+        GLvoid* overall = malloc(width * height * layersToProcess * 4);
+        if (!overall) {
+            gles_glCompressedTexSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth,
+                                           format, imageSize, datab);
+            return;
+        }
+
+        int totalSimpleAlpha = 0;
+        int totalComplexAlpha = 0;
+
+        for (int z = 0; z < layersToProcess; ++z) {
+            const GLvoid* src_layer = (const GLvoid*)((uintptr_t)datab + z * layerSizeCompressed);
+            GLvoid* dst_layer = (GLvoid*)((uintptr_t)overall + z * width * height * 4);
+
+            int layerSimple = 0, layerComplex = 0;
+
+            if ((width & 3) == 0 && (height & 3) == 0) {
+                GLvoid* pixels_layer = uncompressDXTc(width, height, format, layerSizeCompressed,
+                                                      transparent0, &layerSimple, &layerComplex, src_layer);
+                memcpy(dst_layer, pixels_layer, width * height * 4);
+                if (pixels_layer != src_layer) free(pixels_layer);
+            } else {
+                GLsizei nw = (width + 3) & ~3;
+                GLsizei nh = (height + 3) & ~3;
+                GLvoid* tmp = uncompressDXTc(nw, nh, format, layerSizeCompressed,
+                                             transparent0, &layerSimple, &layerComplex, src_layer);
+                uint8_t* src_tmp = (uint8_t*)tmp;
+                uint8_t* dst = (uint8_t*)dst_layer;
+                for (int y = 0; y < height; ++y) {
+                    memcpy(dst + y * width * 4, src_tmp + y * nw * 4, width * 4);
+                }
+                free(tmp);
+            }
+
+            if (srgb) {
+                pixel_srgb_inplace(dst_layer, width, height);
+            }
+
+            totalSimpleAlpha |= layerSimple;
+            totalComplexAlpha |= layerComplex;
+        }
+
+        simpleAlpha = totalSimpleAlpha;
+        complexAlpha = totalComplexAlpha;
+
+        gl4es_glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
+                              width, height, layersToProcess, GL_RGBA, GL_UNSIGNED_BYTE, overall);
+
+        free(overall);
+
+        if (layersToProcess < depth) {
+            const GLvoid* remaining_data = (const GLvoid*)((uintptr_t)datab + layersToProcess * layerSizeCompressed);
+            GLsizei remaining_size = imageSize - layersToProcess * layerSizeCompressed;
+            GLint remaining_zoffset = zoffset + layersToProcess;
+            GLsizei remaining_depth = depth - layersToProcess;
+
+            gles_glCompressedTexSubImage3D(target, level, xoffset, yoffset, remaining_zoffset,
+                                           width, height, remaining_depth, format, remaining_size, remaining_data);
+        }
+    } else {
+        gles_glCompressedTexSubImage3D(target, level, xoffset, yoffset, zoffset,
+                                       width, height, depth, format, imageSize, datab);
+    }
 }
 
 // Direct wrapper
