@@ -2302,8 +2302,8 @@ void APIENTRY_GL4ES gl4es_glTexSubImage2D(GLenum target, GLint level, GLint xoff
         return;
     }
 
-    extern int simpleShaderConvState;
-    bool isRGB565 = simpleShaderConvState <1 && format == GL_RGB && type == GL_UNSIGNED_SHORT_5_6_5;
+    extern int g_esversion;
+    bool isRGB565 = g_esversion >=320 && format == GL_RGB && type == GL_UNSIGNED_SHORT_5_6_5;
     GLvoid* rgb565Pixels = nullptr;
 
     if (isRGB565) {
