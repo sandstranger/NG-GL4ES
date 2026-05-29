@@ -343,7 +343,13 @@ __attribute__((used)) __attribute__((visibility("default")))
 extern "C" char* GLSLtoGLSLES_c(const char* glsl_code, GLenum glsl_type, unsigned int essl_version, unsigned int glsl_version,
                      int* return_code) {
     int tmp_return_code = 0;
-    std::string result = GLSLtoGLSLES(glsl_code, glsl_type, essl_version, glsl_version, tmp_return_code);
+    std::string shader = glsl_code;
+    shader = std::regex_replace(
+            shader,
+            std::regex(R"(#version\s+(300|310|320)\s+es)"),
+            "#version 410"
+    );
+    std::string result = GLSLtoGLSLES(shader.c_str(), glsl_type, essl_version, glsl_version, tmp_return_code);
     *return_code = tmp_return_code;
 
     char* cstr = (char*)malloc(result.size() + 1);
