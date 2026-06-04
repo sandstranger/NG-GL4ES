@@ -135,6 +135,7 @@ set(C_SRC_FILES
     src/gl/vgpu/shaderconv.c
     src/gl/samplers.c
     src/gl/libtxc_dxtn/txc_compress_dxtn.c
+    src/gl/shader_file_cache.c
 )
 
 if(NOT ANDROID)

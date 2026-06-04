@@ -30,6 +30,7 @@ int simpleShaderConvState = 1;
 bool g_enableAngle = false;
 int g_esversion = 300;
 bool g_nohighp = false;
+char *path_to_shader_cache = nullptr;
 
 #if defined(__EMSCRIPTEN__)
 #define NO_INIT_CONSTRUCTOR
@@ -37,6 +38,7 @@ bool g_nohighp = false;
 
 void gl_init();
 void gl_close();
+extern void gl4es_shadercache_set_root(const char* root_dir);
 
 #ifdef GL4ES_COMPILE_FOR_USE_IN_SHARED_LIB
 #ifdef AMIGAOS4
@@ -99,6 +101,7 @@ void initialize_ng_gl4es() {
         */
 #if ANDROID
     globals4es.enableANGLE = g_enableAngle;
+    gl4es_shadercache_set_root(path_to_shader_cache);
 #endif
 }
 char* NGGDirectory;
@@ -824,11 +827,12 @@ void initialize_gl4es() {
 
 __attribute__((used)) __attribute__((visibility("default")))
 void initializeGL4ESData(bool enableSimpleShaderConv,bool enableAngle,int targetESVersion,
-                         bool nohighp){
+                         bool nohighp, const char* pathToShaderCache){
     simpleShaderConvState = enableSimpleShaderConv ? 1 : 0;
     g_enableAngle = enableAngle;
     g_esversion = targetESVersion;
     g_nohighp = nohighp;
+    path_to_shader_cache = strdup(pathToShaderCache);
 }
 
 #ifndef NOX11
