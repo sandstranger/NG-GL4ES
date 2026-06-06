@@ -857,7 +857,7 @@ void APIENTRY_GL4ES gl4es_glShaderSource(GLuint shader, GLsizei count, const GLc
                 int glsl_version = getGLSLVersion(glshader->converted);
 
                 int returnCode = 0; // TODO: handle returnCode
-                glshader->converted = strdup(GLSLtoGLSLES_c(glshader->converted, glshader->type, globals4es.esversion, glsl_version, &returnCode));
+                glshader->converted = GLSLtoGLSLES_c(glshader->converted, glshader->type, globals4es.esversion, glsl_version, &returnCode);
                 glshader->converted = process_uniform_declarations(glshader->converted, glshader->uniforms_declarations, &glshader->uniforms_declarations_count);
                 glshader->is_converted_essl_320 = 0;
 
