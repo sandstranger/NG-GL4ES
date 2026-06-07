@@ -2,17 +2,15 @@
 
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/Include/Types.h>
-#include <glslang/Public/ShaderLang.h>
 #include <spirv_cross/spirv_cross_c.h>
 #include <iostream>
 #include <fstream>
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include <string>
-#include <regex>
-#include <strstream>
 #include <algorithm>
-#include <string>
 #include <sstream>
+#include <atomic>
+#include <mutex>
 #include "../../../version.h"
 #include <spirv-tools/libspirv.hpp>
 #include <spirv-tools/optimizer.hpp>
@@ -23,170 +21,189 @@ extern "C"
 #include "../logs.h"
 }
 
-// #define DEBUG
+
 #ifdef DEBUG
 #define DBG(a) a
 #else
 #define DBG(a)
 #endif
 
-std::string GLSLtoGLSLES(const char* glsl_code, GLenum glsl_type, unsigned int essl_version, unsigned int glsl_version,
-                         int& return_code);
-std::string GLSLtoGLSLES_2(const char* glsl_code, GLenum glsl_type, unsigned int essl_version, int& return_code);
+std::string GLSLtoGLSLES(const char *glsl_code, GLenum glsl_type, unsigned int essl_version,
+                         unsigned int glsl_version,
+                         int &return_code);
 
-const char* atomicCounterEmulatedWatermark = "// Non-opaque atomic uniform converted to SSBO";
+std::string GLSLtoGLSLES_2(const char *glsl_code, GLenum glsl_type, unsigned int essl_version,
+                           int &return_code);
 
-static TBuiltInResource InitResources() {
-    TBuiltInResource Resources{};
+const char *atomicCounterEmulatedWatermark = "// Non-opaque atomic uniform converted to SSBO";
 
-    Resources.maxLights = 32;
-    Resources.maxClipPlanes = 6;
-    Resources.maxTextureUnits = 32;
-    Resources.maxTextureCoords = 32;
-    Resources.maxVertexAttribs = 64;
-    Resources.maxVertexUniformComponents = 4096;
-    Resources.maxVaryingFloats = 64;
-    Resources.maxVertexTextureImageUnits = 32;
-    Resources.maxCombinedTextureImageUnits = 80;
-    Resources.maxTextureImageUnits = 32;
-    Resources.maxFragmentUniformComponents = 4096;
-    Resources.maxDrawBuffers = 32;
-    Resources.maxVertexUniformVectors = 128;
-    Resources.maxVaryingVectors = 8;
-    Resources.maxFragmentUniformVectors = 16;
-    Resources.maxVertexOutputVectors = 16;
-    Resources.maxFragmentInputVectors = 15;
-    Resources.minProgramTexelOffset = -8;
-    Resources.maxProgramTexelOffset = 7;
-    Resources.maxClipDistances = 8;
-    Resources.maxComputeWorkGroupCountX = 65535;
-    Resources.maxComputeWorkGroupCountY = 65535;
-    Resources.maxComputeWorkGroupCountZ = 65535;
-    Resources.maxComputeWorkGroupSizeX = 1024;
-    Resources.maxComputeWorkGroupSizeY = 1024;
-    Resources.maxComputeWorkGroupSizeZ = 64;
-    Resources.maxComputeUniformComponents = 1024;
-    Resources.maxComputeTextureImageUnits = 16;
-    Resources.maxComputeImageUniforms = 8;
-    Resources.maxComputeAtomicCounters = 8;
-    Resources.maxComputeAtomicCounterBuffers = 1;
-    Resources.maxVaryingComponents = 60;
-    Resources.maxVertexOutputComponents = 64;
-    Resources.maxGeometryInputComponents = 64;
-    Resources.maxGeometryOutputComponents = 128;
-    Resources.maxFragmentInputComponents = 128;
-    Resources.maxImageUnits = 8;
-    Resources.maxCombinedImageUnitsAndFragmentOutputs = 8;
-    Resources.maxCombinedShaderOutputResources = 8;
-    Resources.maxImageSamples = 0;
-    Resources.maxVertexImageUniforms = 0;
-    Resources.maxTessControlImageUniforms = 0;
-    Resources.maxTessEvaluationImageUniforms = 0;
-    Resources.maxGeometryImageUniforms = 0;
-    Resources.maxFragmentImageUniforms = 8;
-    Resources.maxCombinedImageUniforms = 8;
-    Resources.maxGeometryTextureImageUnits = 16;
-    Resources.maxGeometryOutputVertices = 256;
-    Resources.maxGeometryTotalOutputComponents = 1024;
-    Resources.maxGeometryUniformComponents = 1024;
-    Resources.maxGeometryVaryingComponents = 64;
-    Resources.maxTessControlInputComponents = 128;
-    Resources.maxTessControlOutputComponents = 128;
-    Resources.maxTessControlTextureImageUnits = 16;
-    Resources.maxTessControlUniformComponents = 1024;
-    Resources.maxTessControlTotalOutputComponents = 4096;
-    Resources.maxTessEvaluationInputComponents = 128;
-    Resources.maxTessEvaluationOutputComponents = 128;
-    Resources.maxTessEvaluationTextureImageUnits = 16;
-    Resources.maxTessEvaluationUniformComponents = 1024;
-    Resources.maxTessPatchComponents = 120;
-    Resources.maxPatchVertices = 32;
-    Resources.maxTessGenLevel = 64;
-    Resources.maxViewports = 16;
-    Resources.maxVertexAtomicCounters = 0;
-    Resources.maxTessControlAtomicCounters = 0;
-    Resources.maxTessEvaluationAtomicCounters = 0;
-    Resources.maxGeometryAtomicCounters = 0;
-    Resources.maxFragmentAtomicCounters = 8;
-    Resources.maxCombinedAtomicCounters = 8;
-    Resources.maxAtomicCounterBindings = 1;
-    Resources.maxVertexAtomicCounterBuffers = 0;
-    Resources.maxTessControlAtomicCounterBuffers = 0;
-    Resources.maxTessEvaluationAtomicCounterBuffers = 0;
-    Resources.maxGeometryAtomicCounterBuffers = 0;
-    Resources.maxFragmentAtomicCounterBuffers = 1;
-    Resources.maxCombinedAtomicCounterBuffers = 1;
-    Resources.maxAtomicCounterBufferSize = 16384;
-    Resources.maxTransformFeedbackBuffers = 4;
-    Resources.maxTransformFeedbackInterleavedComponents = 64;
-    Resources.maxCullDistances = 8;
-    Resources.maxCombinedClipAndCullDistances = 8;
-    Resources.maxSamples = 4;
-    Resources.maxMeshOutputVerticesNV = 256;
-    Resources.maxMeshOutputPrimitivesNV = 512;
-    Resources.maxMeshWorkGroupSizeX_NV = 32;
-    Resources.maxMeshWorkGroupSizeY_NV = 1;
-    Resources.maxMeshWorkGroupSizeZ_NV = 1;
-    Resources.maxTaskWorkGroupSizeX_NV = 32;
-    Resources.maxTaskWorkGroupSizeY_NV = 1;
-    Resources.maxTaskWorkGroupSizeZ_NV = 1;
-    Resources.maxMeshViewCountNV = 4;
 
-    Resources.limits.nonInductiveForLoops = true;
-    Resources.limits.whileLoops = true;
-    Resources.limits.doWhileLoops = true;
-    Resources.limits.generalUniformIndexing = true;
-    Resources.limits.generalAttributeMatrixVectorIndexing = true;
-    Resources.limits.generalVaryingIndexing = true;
-    Resources.limits.generalSamplerIndexing = true;
-    Resources.limits.generalVariableIndexing = true;
-    Resources.limits.generalConstantMatrixVectorIndexing = true;
+static const TBuiltInResource &GetCachedResources() {
+    static TBuiltInResource Resources{};
+    static std::once_flag init_flag;
+    std::call_once(init_flag, []() {
+        Resources.maxLights = 32;
+        Resources.maxClipPlanes = 6;
+        Resources.maxTextureUnits = 32;
+        Resources.maxTextureCoords = 32;
+        Resources.maxVertexAttribs = 64;
+        Resources.maxVertexUniformComponents = 4096;
+        Resources.maxVaryingFloats = 64;
+        Resources.maxVertexTextureImageUnits = 32;
+        Resources.maxCombinedTextureImageUnits = 80;
+        Resources.maxTextureImageUnits = 32;
+        Resources.maxFragmentUniformComponents = 4096;
+        Resources.maxDrawBuffers = 32;
+        Resources.maxVertexUniformVectors = 128;
+        Resources.maxVaryingVectors = 8;
+        Resources.maxFragmentUniformVectors = 16;
+        Resources.maxVertexOutputVectors = 16;
+        Resources.maxFragmentInputVectors = 15;
+        Resources.minProgramTexelOffset = -8;
+        Resources.maxProgramTexelOffset = 7;
+        Resources.maxClipDistances = 8;
+        Resources.maxComputeWorkGroupCountX = 65535;
+        Resources.maxComputeWorkGroupCountY = 65535;
+        Resources.maxComputeWorkGroupCountZ = 65535;
+        Resources.maxComputeWorkGroupSizeX = 1024;
+        Resources.maxComputeWorkGroupSizeY = 1024;
+        Resources.maxComputeWorkGroupSizeZ = 64;
+        Resources.maxComputeUniformComponents = 1024;
+        Resources.maxComputeTextureImageUnits = 16;
+        Resources.maxComputeImageUniforms = 8;
+        Resources.maxComputeAtomicCounters = 8;
+        Resources.maxComputeAtomicCounterBuffers = 1;
+        Resources.maxVaryingComponents = 60;
+        Resources.maxVertexOutputComponents = 64;
+        Resources.maxGeometryInputComponents = 64;
+        Resources.maxGeometryOutputComponents = 128;
+        Resources.maxFragmentInputComponents = 128;
+        Resources.maxImageUnits = 8;
+        Resources.maxCombinedImageUnitsAndFragmentOutputs = 8;
+        Resources.maxCombinedShaderOutputResources = 8;
+        Resources.maxImageSamples = 0;
+        Resources.maxVertexImageUniforms = 0;
+        Resources.maxTessControlImageUniforms = 0;
+        Resources.maxTessEvaluationImageUniforms = 0;
+        Resources.maxGeometryImageUniforms = 0;
+        Resources.maxFragmentImageUniforms = 8;
+        Resources.maxCombinedImageUniforms = 8;
+        Resources.maxGeometryTextureImageUnits = 16;
+        Resources.maxGeometryOutputVertices = 256;
+        Resources.maxGeometryTotalOutputComponents = 1024;
+        Resources.maxGeometryUniformComponents = 1024;
+        Resources.maxGeometryVaryingComponents = 64;
+        Resources.maxTessControlInputComponents = 128;
+        Resources.maxTessControlOutputComponents = 128;
+        Resources.maxTessControlTextureImageUnits = 16;
+        Resources.maxTessControlUniformComponents = 1024;
+        Resources.maxTessControlTotalOutputComponents = 4096;
+        Resources.maxTessEvaluationInputComponents = 128;
+        Resources.maxTessEvaluationOutputComponents = 128;
+        Resources.maxTessEvaluationTextureImageUnits = 16;
+        Resources.maxTessEvaluationUniformComponents = 1024;
+        Resources.maxTessPatchComponents = 120;
+        Resources.maxPatchVertices = 32;
+        Resources.maxTessGenLevel = 64;
+        Resources.maxViewports = 16;
+        Resources.maxVertexAtomicCounters = 0;
+        Resources.maxTessControlAtomicCounters = 0;
+        Resources.maxTessEvaluationAtomicCounters = 0;
+        Resources.maxGeometryAtomicCounters = 0;
+        Resources.maxFragmentAtomicCounters = 8;
+        Resources.maxCombinedAtomicCounters = 8;
+        Resources.maxAtomicCounterBindings = 1;
+        Resources.maxVertexAtomicCounterBuffers = 0;
+        Resources.maxTessControlAtomicCounterBuffers = 0;
+        Resources.maxTessEvaluationAtomicCounterBuffers = 0;
+        Resources.maxGeometryAtomicCounterBuffers = 0;
+        Resources.maxFragmentAtomicCounterBuffers = 1;
+        Resources.maxCombinedAtomicCounterBuffers = 1;
+        Resources.maxAtomicCounterBufferSize = 16384;
+        Resources.maxTransformFeedbackBuffers = 4;
+        Resources.maxTransformFeedbackInterleavedComponents = 64;
+        Resources.maxCullDistances = 8;
+        Resources.maxCombinedClipAndCullDistances = 8;
+        Resources.maxSamples = 4;
+        Resources.maxMeshOutputVerticesNV = 256;
+        Resources.maxMeshOutputPrimitivesNV = 512;
+        Resources.maxMeshWorkGroupSizeX_NV = 32;
+        Resources.maxMeshWorkGroupSizeY_NV = 1;
+        Resources.maxMeshWorkGroupSizeZ_NV = 1;
+        Resources.maxTaskWorkGroupSizeX_NV = 32;
+        Resources.maxTaskWorkGroupSizeY_NV = 1;
+        Resources.maxTaskWorkGroupSizeZ_NV = 1;
+        Resources.maxMeshViewCountNV = 4;
 
+        Resources.limits.nonInductiveForLoops = true;
+        Resources.limits.whileLoops = true;
+        Resources.limits.doWhileLoops = true;
+        Resources.limits.generalUniformIndexing = true;
+        Resources.limits.generalAttributeMatrixVectorIndexing = true;
+        Resources.limits.generalVaryingIndexing = true;
+        Resources.limits.generalSamplerIndexing = true;
+        Resources.limits.generalVariableIndexing = true;
+        Resources.limits.generalConstantMatrixVectorIndexing = true;
+    });
     return Resources;
 }
 
-int getGLSLVersion(const char* glsl_code) {
-    std::string code(glsl_code);
-    static std::regex version_pattern(R"(#version\s+(\d{3}))");
-    std::smatch match;
-    if (std::regex_search(code, match, version_pattern)) {
-        return std::stoi(match[1].str());
-    }
 
+int getGLSLVersion(const char *glsl_code) {
+    const char *p = glsl_code;
+    while (*p) {
+        if (p[0] == '#' && strncmp(p, "#version", 8) == 0) {
+            p += 8;
+            while (*p == ' ' || *p == '\t') p++;
+            int version = 0;
+            while (*p >= '0' && *p <= '9') {
+                version = version * 10 + (*p - '0');
+                p++;
+            }
+            if (version > 0) return version;
+        }
+        p++;
+    }
     return -1;
 }
 
-std::string forceSupporterOutput(const std::string& glslCode) {
-    bool hasPrecisionFloat =
-        glslCode.find("precision ") != std::string::npos && glslCode.find("float;") != std::string::npos;
-    bool hasPrecisionInt =
-        glslCode.find("precision ") != std::string::npos && glslCode.find("int;") != std::string::npos;
 
-    std::string result = glslCode;
-    std::string precisionFloat;
-    std::string precisionInt;
+std::string forceSupporterOutput(const std::string &glslCode) {
+    bool hasPrecisionFloat = (glslCode.find("precision ") != std::string::npos &&
+                              glslCode.find("float;") != std::string::npos);
+    bool hasPrecisionInt = (glslCode.find("precision ") != std::string::npos &&
+                            glslCode.find("int;") != std::string::npos);
+
+    std::string result;
+    result.reserve(glslCode.size() + 64);
+
+    std::string precisionFloat = hasPrecisionFloat ? "" : "precision highp float;\n";
+    std::string precisionInt = hasPrecisionInt ? "" : "precision highp int;\n";
 
     if (hasPrecisionFloat && hasPrecisionInt) {
-        std::istringstream iss(result);
-        std::vector<std::string> lines;
-        std::string line;
-        while (std::getline(iss, line)) {
+
+        size_t pos = 0;
+        while (pos < glslCode.size()) {
+            size_t line_start = pos;
+            size_t line_end = glslCode.find('\n', pos);
+            if (line_end == std::string::npos) line_end = glslCode.size();
+
+            std::string line = glslCode.substr(line_start, line_end - line_start);
             bool isPrecisionLine = (line.find("precision ") != std::string::npos) &&
-                                   (line.find("float;") != std::string::npos || line.find("int;") != std::string::npos);
+                                   (line.find("float;") != std::string::npos ||
+                                    line.find("int;") != std::string::npos);
+
             if (!isPrecisionLine) {
-                lines.push_back(line);
+                if (!result.empty()) result += '\n';
+                result += line;
             }
-        }
-        result.clear();
-        for (size_t i = 0; i < lines.size(); ++i) {
-            if (i != 0) result += '\n';
-            result += lines[i];
+
+            pos = line_end + 1;
         }
         precisionFloat = "precision highp float;\n";
         precisionInt = "precision highp int;\n";
     } else {
-        precisionFloat = hasPrecisionFloat ? "" : "precision highp float;\n";
-        precisionInt = hasPrecisionInt ? "" : "precision highp int;\n";
+        result = glslCode;
     }
 
     size_t lastExtensionPos = result.rfind("#extension");
@@ -213,28 +230,108 @@ std::string forceSupporterOutput(const std::string& glslCode) {
     return result;
 }
 
-std::string removeLayoutBinding(const std::string& glslCode) {
-    static std::regex bindingRegex(R"(layout\s*\(\s*binding\s*=\s*\d+\s*\)\s*)");
-    std::string result = std::regex_replace(glslCode, bindingRegex, "");
-    static std::regex bindingRegex2(R"(layout\s*\(\s*binding\s*=\s*\d+\s*,)");
-    result = std::regex_replace(result, bindingRegex2, "layout(");
+
+std::string removeLayoutBinding(const std::string &glslCode) {
+    std::string result;
+    result.reserve(glslCode.size());
+
+    size_t pos = 0;
+    while (pos < glslCode.size()) {
+        size_t layout_pos = glslCode.find("layout(", pos);
+        if (layout_pos == std::string::npos) {
+            result.append(glslCode, pos, std::string::npos);
+            break;
+        }
+
+        result.append(glslCode, pos, layout_pos - pos);
+
+        size_t layout_end = glslCode.find(')', layout_pos);
+        if (layout_end == std::string::npos) {
+            result.append(glslCode, layout_pos, std::string::npos);
+            break;
+        }
+
+        std::string layout_content = glslCode.substr(layout_pos + 7, layout_end - layout_pos - 7);
+
+
+        size_t binding_pos = layout_content.find("binding");
+        if (binding_pos != std::string::npos) {
+            size_t binding_end = binding_pos;
+
+            binding_end += 7;
+
+            while (binding_end < layout_content.size() &&
+                   (layout_content[binding_end] == ' ' || layout_content[binding_end] == '\t')) {
+                binding_end++;
+            }
+
+            if (binding_end < layout_content.size() && layout_content[binding_end] == '=') {
+                binding_end++;
+            }
+
+            while (binding_end < layout_content.size() &&
+                   (layout_content[binding_end] == ' ' || layout_content[binding_end] == '\t')) {
+                binding_end++;
+            }
+
+            while (binding_end < layout_content.size() &&
+                   layout_content[binding_end] >= '0' && layout_content[binding_end] <= '9') {
+                binding_end++;
+            }
+
+            if (binding_end < layout_content.size() && layout_content[binding_end] == ',') {
+                binding_end++;
+
+                while (binding_end < layout_content.size() &&
+                       (layout_content[binding_end] == ' ' ||
+                        layout_content[binding_end] == '\t')) {
+                    binding_end++;
+                }
+            }
+
+
+            std::string new_layout = layout_content.substr(0, binding_pos) +
+                                     layout_content.substr(binding_end);
+
+
+            size_t start = 0;
+            while (start < new_layout.size() &&
+                   (new_layout[start] == ' ' || new_layout[start] == '\t' ||
+                    new_layout[start] == ',')) {
+                start++;
+            }
+            new_layout = new_layout.substr(start);
+
+            if (!new_layout.empty()) {
+                result += "layout(" + new_layout + ")";
+            }
+        } else {
+            result.append(glslCode, layout_pos, layout_end - layout_pos + 1);
+        }
+
+        pos = layout_end + 1;
+    }
+
     return result;
 }
 
-void trim(std::string& str) {
-    str.erase(str.begin(), std::find_if(str.begin(), str.end(), [](int ch) { return !std::isspace(ch); }));
-    str.erase(std::find_if(str.rbegin(), str.rend(), [](int ch) { return !std::isspace(ch); }).base(), str.end());
+void trim(std::string &str) {
+    str.erase(str.begin(),
+              std::find_if(str.begin(), str.end(), [](int ch) { return !std::isspace(ch); }));
+    str.erase(
+            std::find_if(str.rbegin(), str.rend(), [](int ch) { return !std::isspace(ch); }).base(),
+            str.end());
 }
 
-// Process all uniform declarations into `uniform <precision> <type> <name>;` form
-std::string process_uniform_declarations(const std::string& glslCode) {
+
+std::string process_uniform_declarations(const std::string &glslCode) {
     std::string result;
+    result.reserve(glslCode.length());
+
     size_t scan_pos = 0;
     size_t chunk_start = 0;
     const size_t length = glslCode.length();
     const std::vector<std::string> precision_kws = {"highp", "lowp", "mediump"};
-
-    result.reserve(glslCode.length());
 
     while (scan_pos < length) {
         if (glslCode.compare(scan_pos, 7, "uniform") == 0) {
@@ -243,7 +340,7 @@ std::string process_uniform_declarations(const std::string& glslCode) {
             }
 
             const size_t decl_start = scan_pos;
-            scan_pos += 7; // Skip "uniform"
+            scan_pos += 7;
 
             std::string precision, type;
             bool found_precision = false;
@@ -252,7 +349,7 @@ std::string process_uniform_declarations(const std::string& glslCode) {
                 while (scan_pos < length && std::isspace(glslCode[scan_pos]))
                     ++scan_pos;
 
-                for (const auto& kw : precision_kws) {
+                for (const auto &kw: precision_kws) {
                     if (glslCode.compare(scan_pos, kw.length(), kw) == 0) {
                         precision = " " + kw;
                         scan_pos += kw.length();
@@ -263,7 +360,8 @@ std::string process_uniform_declarations(const std::string& glslCode) {
                 if (found_precision) break;
 
                 const size_t type_start = scan_pos;
-                while (scan_pos < length && (std::isalnum(glslCode[scan_pos]) || glslCode[scan_pos] == '_')) {
+                while (scan_pos < length &&
+                       (std::isalnum(glslCode[scan_pos]) || glslCode[scan_pos] == '_')) {
                     ++scan_pos;
                 }
                 type = glslCode.substr(type_start, scan_pos - type_start);
@@ -275,7 +373,7 @@ std::string process_uniform_declarations(const std::string& glslCode) {
                     ++scan_pos;
 
                 bool found = false;
-                for (const auto& kw : precision_kws) {
+                for (const auto &kw: precision_kws) {
                     if (glslCode.compare(scan_pos, kw.length(), kw) == 0) {
                         if (precision.empty()) precision = " " + kw;
                         scan_pos += kw.length();
@@ -288,7 +386,8 @@ std::string process_uniform_declarations(const std::string& glslCode) {
 
             if (type.empty()) {
                 const size_t type_start = scan_pos;
-                while (scan_pos < length && (std::isalnum(glslCode[scan_pos]) || glslCode[scan_pos] == '_')) {
+                while (scan_pos < length &&
+                       (std::isalnum(glslCode[scan_pos]) || glslCode[scan_pos] == '_')) {
                     ++scan_pos;
                 }
                 type = glslCode.substr(type_start, scan_pos - type_start);
@@ -297,7 +396,8 @@ std::string process_uniform_declarations(const std::string& glslCode) {
             while (scan_pos < length && std::isspace(glslCode[scan_pos]))
                 ++scan_pos;
             const size_t name_start = scan_pos;
-            while (scan_pos < length && (std::isalnum(glslCode[scan_pos]) || glslCode[scan_pos] == '_')) {
+            while (scan_pos < length &&
+                   (std::isalnum(glslCode[scan_pos]) || glslCode[scan_pos] == '_')) {
                 ++scan_pos;
             }
             const std::string name = glslCode.substr(name_start, scan_pos - name_start);
@@ -310,8 +410,8 @@ std::string process_uniform_declarations(const std::string& glslCode) {
 
             const bool has_initializer = (glslCode.find('=', scan_pos) < decl_end);
             if (has_initializer) {
-                result.append("uniform").append(precision).append(" ").append(type).append(" ").append(name).append(
-                    ";");
+                result.append("uniform").append(precision).append(" ").append(type).append(
+                        " ").append(name).append(";");
             } else {
                 result.append(glslCode, decl_start, decl_end - decl_start);
             }
@@ -329,30 +429,71 @@ std::string process_uniform_declarations(const std::string& glslCode) {
     return result;
 }
 
-std::string processOutColorLocations(const std::string& glslCode) {
-    const static std::regex pattern(R"(\n(out highp vec4 outColor)(\d+);)");
-    const std::string replacement = "\nlayout(location=$2) $1$2;";
-    return std::regex_replace(glslCode, pattern, replacement);
+
+std::string processOutColorLocations(const std::string &glslCode) {
+    std::string result;
+    result.reserve(glslCode.size() + 64);
+
+    size_t pos = 0;
+    while (pos < glslCode.size()) {
+        size_t out_pos = glslCode.find("\nout highp vec4 outColor", pos);
+        if (out_pos == std::string::npos) {
+            result.append(glslCode, pos, std::string::npos);
+            break;
+        }
+
+        result.append(glslCode, pos, out_pos - pos);
+
+        size_t num_start = out_pos + 24;
+        size_t num_end = num_start;
+        while (num_end < glslCode.size() && glslCode[num_end] >= '0' && glslCode[num_end] <= '9') {
+            num_end++;
+        }
+
+        if (num_end > num_start && num_end < glslCode.size() && glslCode[num_end] == ';') {
+            std::string num = glslCode.substr(num_start, num_end - num_start);
+            result += "\nlayout(location=" + num + ") out highp vec4 outColor" + num + ";";
+            pos = num_end + 1;
+        } else {
+            result.append(glslCode, out_pos, 1);
+            pos = out_pos + 1;
+        }
+    }
+
+    return result;
 }
 
-bool checkIfAtomicCounterBufferEmulated(const std::string& glslCode) {
+bool checkIfAtomicCounterBufferEmulated(const std::string &glslCode) {
     return glslCode.find(atomicCounterEmulatedWatermark) != std::string::npos;
 }
 
 __attribute__((used)) __attribute__((visibility("default")))
-extern "C" char* GLSLtoGLSLES_c(const char* glsl_code, GLenum glsl_type, unsigned int essl_version, unsigned int glsl_version,
-                     int* return_code) {
+extern "C" char *GLSLtoGLSLES_c(const char *glsl_code, GLenum glsl_type, unsigned int essl_version,
+                                unsigned int glsl_version,
+                                int *return_code) {
     int tmp_return_code = 0;
     std::string shader = glsl_code;
-    shader = std::regex_replace(
-            shader,
-            std::regex(R"(#version\s+(300|310|320)\s+es)"),
-            "#version 410"
-    );
-    std::string result = GLSLtoGLSLES(shader.c_str(), glsl_type, essl_version, glsl_version, tmp_return_code);
+
+
+    size_t pos = 0;
+    while ((pos = shader.find("#version", pos)) != std::string::npos) {
+        size_t end_pos = shader.find('\n', pos);
+        if (end_pos == std::string::npos) end_pos = shader.size();
+
+        std::string line = shader.substr(pos, end_pos - pos);
+        if (line.find("300 es") != std::string::npos ||
+            line.find("310 es") != std::string::npos ||
+            line.find("320 es") != std::string::npos) {
+            shader.replace(pos, end_pos - pos, "#version 410");
+        }
+        pos = end_pos + 1;
+    }
+
+    std::string result = GLSLtoGLSLES(shader.c_str(), glsl_type, essl_version, glsl_version,
+                                      tmp_return_code);
     *return_code = tmp_return_code;
 
-    char* cstr = (char*)malloc(result.size() + 1);
+    char *cstr = (char *) malloc(result.size() + 1);
     if (!cstr) {
         *return_code = -1;
         return nullptr;
@@ -361,17 +502,19 @@ extern "C" char* GLSLtoGLSLES_c(const char* glsl_code, GLenum glsl_type, unsigne
     return cstr;
 }
 
-std::string GLSLtoGLSLES(const char* glsl_code, GLenum glsl_type, unsigned int essl_version, unsigned int glsl_version,
-                         int& return_code) {
+std::string GLSLtoGLSLES(const char *glsl_code, GLenum glsl_type, unsigned int essl_version,
+                         unsigned int glsl_version,
+                         int &return_code) {
     return_code = -1;
     std::string converted = GLSLtoGLSLES_2(glsl_code, glsl_type, essl_version, return_code);
-
     return (return_code >= 0) ? converted : glsl_code;
 }
 
-std::string replace_line_starting_with(const std::string& glslCode, const std::string& starting,
-                                       const std::string& substitution = "") {
+std::string replace_line_starting_with(const std::string &glslCode, const std::string &starting,
+                                       const std::string &substitution = "") {
     std::string result;
+    result.reserve(glslCode.size());
+
     size_t length = glslCode.size();
     size_t start = 0;
     size_t current = 0;
@@ -383,24 +526,20 @@ std::string replace_line_starting_with(const std::string& glslCode, const std::s
     };
 
     while (current < length) {
-        // Skip whitespace at line begin
         size_t lineStart = current;
         while (current < length && (glslCode[current] == ' ' || glslCode[current] == '\t')) {
             current++;
         }
 
-        // Check whether #line directive
         bool isLineDirective = false;
         if (current + 5 <= length && glslCode.compare(current, 5, "#line") == 0) {
             isLineDirective = true;
         }
 
-        // Move to line end
         while (current < length && glslCode[current] != '\r' && glslCode[current] != '\n') {
             current++;
         }
 
-        // Handle carriage return
         size_t newlineLength = 0;
         if (current < length) {
             if (glslCode[current] == '\r') {
@@ -411,34 +550,28 @@ std::string replace_line_starting_with(const std::string& glslCode, const std::s
         }
 
         if (isLineDirective) {
-            // Find #line directive ->
-            //  1. Append chunk
-            append_chunk(lineStart); // from chunk_begin to before `#line`
-            // 2. Skip this line (incl. \n)
+            append_chunk(lineStart);
             current += newlineLength;
-            start = current; // 3. Starting from next line
-
+            start = current;
             result += substitution;
         } else {
-            // move to a new line
             current += newlineLength;
         }
     }
 
-    // append last block
     append_chunk(current);
     return result;
 }
 
-static inline void replace_all(std::string& str, const std::string& from, const std::string& to) {
+static inline void replace_all(std::string &str, const std::string &from, const std::string &to) {
     size_t start_pos = 0;
     while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
         str.replace(start_pos, from.length(), to);
-        start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+        start_pos += to.length();
     }
 }
 
-static size_t find_insertion_point(const std::string& glsl) {
+static size_t find_insertion_point(const std::string &glsl) {
     size_t pos = 0;
     size_t insertion_point = 0;
 
@@ -452,9 +585,6 @@ static size_t find_insertion_point(const std::string& glsl) {
         }
         insertion_point = version_end;
         pos = version_end;
-    } else {
-        insertion_point = 0;
-        pos = 0;
     }
 
     while (pos < glsl.length()) {
@@ -489,92 +619,152 @@ static size_t find_insertion_point(const std::string& glsl) {
     return insertion_point;
 }
 
-bool process_non_opaque_atomic_to_ssbo(std::string& source) {
+
+bool process_non_opaque_atomic_to_ssbo(std::string &source) {
     if (source.find("atomicCounter") == std::string::npos) return false;
 
     std::set<std::string> atomic_vars;
     std::map<std::string, std::string> binding_map;
-    std::regex decl_rx(
-        R"(layout\s*\(\s*binding\s*=\s*(\d+)\s*(?:,\s*offset\s*=\s*(\d+)\s*)?\)\s*uniform\s+atomic_uint\s+(\w+)\s*;)",
-        std::regex::icase);
 
-    std::smatch m;
-    auto it = source.cbegin();
-    while (std::regex_search(it, source.cend(), m, decl_rx)) {
-        size_t prefix = std::distance(source.cbegin(), it);
-        size_t match_pos = prefix + m.position(0);
-        size_t match_len = m.length(0);
 
-        std::string binding = m[1].str();
-        std::string var = m[3].str();
+    size_t pos = 0;
+    while ((pos = source.find("uniform atomic_uint", pos)) != std::string::npos) {
+
+        size_t layout_start = source.rfind("layout(", pos);
+        if (layout_start == std::string::npos || pos - layout_start > 100) {
+            pos += 18;
+            continue;
+        }
+
+        size_t layout_end = source.find(')', layout_start);
+        if (layout_end == std::string::npos || layout_end > pos) {
+            pos += 18;
+            continue;
+        }
+
+        std::string layout_content = source.substr(layout_start + 7, layout_end - layout_start - 7);
+
+
+        size_t binding_pos = layout_content.find("binding");
+        if (binding_pos == std::string::npos) {
+            pos += 18;
+            continue;
+        }
+
+        size_t num_start = binding_pos + 7;
+        while (num_start < layout_content.size() &&
+               (layout_content[num_start] == ' ' || layout_content[num_start] == '\t' ||
+                layout_content[num_start] == '=')) {
+            num_start++;
+        }
+
+        size_t num_end = num_start;
+        while (num_end < layout_content.size() &&
+               layout_content[num_end] >= '0' && layout_content[num_end] <= '9') {
+            num_end++;
+        }
+
+        if (num_end == num_start) {
+            pos += 18;
+            continue;
+        }
+
+        std::string binding = layout_content.substr(num_start, num_end - num_start);
+
+
+        size_t var_start = pos + 18;
+        while (var_start < source.size() && std::isspace(source[var_start])) {
+            var_start++;
+        }
+
+        size_t var_end = var_start;
+        while (var_end < source.size() &&
+               (std::isalnum(source[var_end]) || source[var_end] == '_')) {
+            var_end++;
+        }
+
+        if (var_end == var_start) {
+            pos += 18;
+            continue;
+        }
+
+        std::string var = source.substr(var_start, var_end - var_start);
+
+
+        size_t semicolon = source.find(';', var_end);
+        if (semicolon == std::string::npos) {
+            pos += 18;
+            continue;
+        }
+
         atomic_vars.insert(var);
         binding_map[var] = binding;
 
-        std::string repl = "layout(std430, binding=" + binding + ") buffer AtomicCounterSSBO_" + binding +
-                           " {\n"
-                           "    uint " +
-                           var +
-                           ";\n"
-                           "};\n";
-        source.replace(match_pos, match_len, repl);
+        std::string repl =
+                "layout(std430, binding=" + binding + ") buffer AtomicCounterSSBO_" + binding +
+                " {\n    uint " + var + ";\n};\n";
 
-        it = source.cbegin() + match_pos + repl.size();
+        source.replace(layout_start, semicolon - layout_start + 1, repl);
+        pos = layout_start + repl.size();
     }
 
     if (atomic_vars.empty()) return true;
 
-    for (auto& var : atomic_vars) {
-        source = std::regex_replace(
-            source, std::regex(R"(\batomicCounterIncrement\s*\(\s*)" + var + R"(\s*\))", std::regex::icase),
-            "atomicAdd(" + var + ", 1u)");
-        source = std::regex_replace(
-            source, std::regex(R"(\batomicCounterDecrement\s*\(\s*)" + var + R"(\s*\))", std::regex::icase),
-            "atomicAdd(" + var + ", uint(-1))");
-        source = std::regex_replace(
-            source, std::regex(R"(\batomicCounterAdd\s*\(\s*)" + var + R"(\s*,\s*([^)]+)\s*\))", std::regex::icase),
-            "atomicAdd(" + var + ", $1)");
-        source = std::regex_replace(
-            source, std::regex(R"(\batomicCounter\s*\(\s*)" + var + R"(\s*\))", std::regex::icase), var);
-    }
+    for (auto &var: atomic_vars) {
 
-    // insert memoryBarrierBuffer
-    {
-        std::regex rx_barrier(R"(([ \t]*\batomicAdd\b[^;]*;))", std::regex::icase);
-
-        std::set<size_t> processed_positions;
-        std::string result;
-        size_t last_pos = 0;
-
-        for (auto it = std::sregex_iterator(source.begin(), source.end(), rx_barrier); it != std::sregex_iterator();
-             ++it) {
-
-            size_t start_pos = it->position();
-            size_t end_pos = start_pos + it->length();
-
-            if (processed_positions.find(start_pos) != processed_positions.end()) {
-                continue;
-            }
-
-            result += source.substr(last_pos, start_pos - last_pos);
-
-            std::string matched_stmt = it->str();
-            result += matched_stmt;
-
-            result += "\n    memoryBarrierBuffer();";
-
-            processed_positions.insert(start_pos);
-            last_pos = end_pos;
+        std::string search = "atomicCounterIncrement(" + var + ")";
+        std::string replace = "atomicAdd(" + var + ", 1u)";
+        size_t p = 0;
+        while ((p = source.find(search, p)) != std::string::npos) {
+            source.replace(p, search.size(), replace);
+            p += replace.size();
         }
 
-        result += source.substr(last_pos);
-        source = result;
+
+        search = "atomicCounterDecrement(" + var + ")";
+        replace = "atomicAdd(" + var + ", uint(-1))";
+        p = 0;
+        while ((p = source.find(search, p)) != std::string::npos) {
+            source.replace(p, search.size(), replace);
+            p += replace.size();
+        }
+
+
+        search = "atomicCounterAdd(" + var + ",";
+        replace = "atomicAdd(" + var + ",";
+        p = 0;
+        while ((p = source.find(search, p)) != std::string::npos) {
+            source.replace(p, search.size(), replace);
+            p += replace.size();
+        }
+
+
+        search = "atomicCounter(" + var + ")";
+        p = 0;
+        while ((p = source.find(search, p)) != std::string::npos) {
+            source.replace(p, search.size(), var);
+            p += var.size();
+        }
+    }
+
+
+    size_t p = 0;
+    while ((p = source.find("atomicAdd(", p)) != std::string::npos) {
+        size_t semicolon = source.find(';', p);
+        if (semicolon != std::string::npos) {
+            source.insert(semicolon + 1, "\n    memoryBarrierBuffer();");
+            p = semicolon + 25;
+        } else {
+            p += 10;
+        }
     }
 
     source += "\n" + std::string(atomicCounterEmulatedWatermark);
     return true;
 }
 
-void process_sampler_buffer(std::string& source) { // a simplized version, should be rewritten in the future
+
+void process_sampler_buffer(std::string &source) {
     if (source.find("isamplerBuffer") == std::string::npos) {
         return;
     }
@@ -585,11 +775,39 @@ void process_sampler_buffer(std::string& source) { // a simplized version, shoul
         pos += 11;
     }
 
-    std::regex pattern(R"(texelFetch\s*\(\s*(\w+)\s*,\s*([^)]+?)\s*\))");
-    source = std::regex_replace(source, pattern,
-                                "texelFetch($1, ivec2(($2) % u_BufferTexWidth, ($2) / u_BufferTexWidth), 0)");
 
-    const char* boundaryProtection = R"(
+    pos = 0;
+    while ((pos = source.find("texelFetch(", pos)) != std::string::npos) {
+        size_t args_start = pos + 11;
+        size_t args_end = source.find(')', args_start);
+        if (args_end == std::string::npos) {
+            pos += 11;
+            continue;
+        }
+
+        std::string args = source.substr(args_start, args_end - args_start);
+        size_t comma = args.find(',');
+        if (comma == std::string::npos) {
+            pos += 11;
+            continue;
+        }
+
+        std::string name = args.substr(0, comma);
+        std::string index = args.substr(comma + 1);
+
+
+        while (!name.empty() && std::isspace(name.back())) name.pop_back();
+        while (!index.empty() && std::isspace(index.front())) index = index.substr(1);
+
+        std::string replacement =
+                "texelFetch(" + name + ", ivec2((" + index + ") % u_BufferTexWidth, (" +
+                index + ") / u_BufferTexWidth), 0)";
+
+        source.replace(pos, args_end - pos + 1, replacement);
+        pos += replacement.size();
+    }
+
+    const char *boundaryProtection = R"(
 ivec2 bufferCoords(int index) {
     int width = u_BufferTexWidth;
     int x = index % width;
@@ -602,15 +820,47 @@ ivec2 bufferCoords(int index) {
 }
 )";
 
-    source = std::regex_replace(source, std::regex("texelFetch\\((\\w+)\\s*,\\s*ivec2\\(([^)]+)\\)\\s*,\\s*0\\)"),
-                                "texelFetch($1, bufferCoords($2), 0)");
+
+    pos = 0;
+    while ((pos = source.find("texelFetch(", pos)) != std::string::npos) {
+        size_t args_start = pos + 11;
+        size_t args_end = source.find(')', args_start);
+        if (args_end == std::string::npos) {
+            pos += 11;
+            continue;
+        }
+
+        std::string args = source.substr(args_start, args_end - args_start);
+        size_t comma = args.find(',');
+        if (comma == std::string::npos) {
+            pos += 11;
+            continue;
+        }
+
+        std::string name = args.substr(0, comma);
+        std::string coords = args.substr(comma + 1);
+
+        if (coords.find("ivec2(") != std::string::npos) {
+            size_t ivec_start = coords.find("ivec2(") + 6;
+            size_t ivec_end = coords.rfind(')');
+            if (ivec_end != std::string::npos) {
+                std::string index = coords.substr(ivec_start, ivec_end - ivec_start);
+                std::string replacement =
+                        "texelFetch(" + name + ", bufferCoords(" + index + "), 0)";
+                source.replace(pos, args_end - pos + 1, replacement);
+                pos += replacement.size();
+                continue;
+            }
+        }
+        pos += 11;
+    }
 
     size_t insertion_point = find_insertion_point(source);
     if (insertion_point != std::string::npos) {
         source.insert(insertion_point, boundaryProtection);
     }
 
-    const char* uniformDecl = R"(
+    const char *uniformDecl = R"(
 uniform int u_BufferTexWidth;
 uniform int u_BufferTexHeight;
 )";
@@ -624,13 +874,12 @@ uniform int u_BufferTexHeight;
     }
 }
 
-static void inject_textureQueryLod(std::string& glsl) {
-    const std::regex defRegex(R"(vec2\s+mg_textureQueryLod\s*\()", std::regex::ECMAScript);
 
+static void inject_textureQueryLod(std::string &glsl) {
     if (glsl.find("textureQueryLod") == std::string::npos) {
         return;
     }
-    if (std::regex_search(glsl, defRegex)) {
+    if (glsl.find("mg_textureQueryLod") != std::string::npos) {
         return;
     }
 
@@ -651,24 +900,26 @@ vec2 mg_textureQueryLod(sampler2D tex, vec2 uv) {
     glsl.insert(insertPos, "\n" + textureQueryLodImpl + "\n");
 }
 
-static inline void inject_temporal_filter(std::string& glsl) {
-    const std::regex defRegex(R"(vec4\s+GI_TemporalFilter\s*\()", std::regex::ECMAScript);
 
+static inline void inject_temporal_filter(std::string &glsl) {
     if (glsl.find("GI_TemporalFilter") == std::string::npos) {
         return;
     }
-    if (std::regex_search(glsl, defRegex)) {
+    if (glsl.find("vec4 GI_TemporalFilter()") != std::string::npos) {
         return;
     }
 
-    const std::regex uniformRegex(
-        R"(^\s*(?:layout\s*\([^)]*\)\s*)?uniform\s+\w+(?:\s*\[\s*\d+\s*\])?\s+\w+(?:\s*\[\s*\d+\s*\])?\s*;.*$)",
-        std::regex::ECMAScript | std::regex::multiline);
-    std::sregex_iterator it(glsl.begin(), glsl.end(), uniformRegex);
-    std::sregex_iterator end;
+
     size_t insertPos = 0;
-    for (; it != end; ++it) {
-        insertPos = it->position() + it->length();
+    size_t pos = 0;
+    while ((pos = glsl.find("uniform", pos)) != std::string::npos) {
+        size_t semicolon = glsl.find(';', pos);
+        if (semicolon != std::string::npos) {
+            insertPos = semicolon + 1;
+            pos = semicolon + 1;
+        } else {
+            break;
+        }
     }
 
     const std::string GI_TemporalFilterImpl = R"(
@@ -697,12 +948,14 @@ vec4 GI_TemporalFilter() {
 )";
     glsl.insert(insertPos, "\n" + GI_TemporalFilterImpl + "\n");
 }
+
 #define xstr(s) str(s)
 #define str(s) #s
 
-void inject_ngg_macro_definition(std::string& glslCode) {
+void inject_ngg_macro_definition(std::string &glslCode) {
     std::string macro_definitions = "\n#define NGG_NGG\n"
-                                    "#define NGG_NGG_VERSION " xstr(MAJOR) xstr(MINOR) xstr(REVISION) "\n";
+                                    "#define NGG_NGG_VERSION " xstr(MAJOR) xstr(MINOR) xstr(
+                                            REVISION) "\n";
 
     size_t versionPos = glslCode.rfind("#version");
     size_t insertionPos = 0;
@@ -718,31 +971,26 @@ void inject_ngg_macro_definition(std::string& glslCode) {
     glslCode.insert(insertionPos, macro_definitions);
 }
 
-std::string preprocess_glsl(const std::string& glsl, GLenum shaderType, bool* atomicCounterEmulated) {
+std::string
+preprocess_glsl(const std::string &glsl, GLenum shaderType, bool *atomicCounterEmulated) {
     std::string ret = glsl;
-    // Remove lines beginning with `#line`
     ret = replace_line_starting_with(ret, "#line");
-    // Act as if disable_GL_ARB_derivative_control is false
     replace_all(ret, "#ifdef GL_ARB_derivative_control", "#if 0");
     replace_all(ret, "#ifndef GL_ARB_derivative_control", "#if 1");
 
-    // Polyfill transpose()
     replace_all(ret, "const mat3 rotInverse = transpose(rot);",
                 "const mat3 rotInverse = mat3(rot[0][0], rot[1][0], rot[2][0], rot[0][1], rot[1][1], rot[2][1], "
                 "rot[0][2], rot[1][2], rot[2][2]);");
 
-    // GI_TemporalFilter injection
     inject_temporal_filter(ret);
 
-    // textureQueryLod injection
-    if (/*!g_gles_caps.GL_EXT_texture_query_lod*/ 1) {
+    if (1) {
         inject_textureQueryLod(ret);
     }
 
     inject_ngg_macro_definition(ret);
 
-    if (/*hardware->emulate_texture_buffer*/ 0) {
-        // Sampler buffer processing
+    if (0) {
         process_sampler_buffer(ret);
     }
 
@@ -750,42 +998,42 @@ std::string preprocess_glsl(const std::string& glsl, GLenum shaderType, bool* at
     return ret;
 }
 
-int get_or_add_glsl_version(std::string& glsl) {
+int get_or_add_glsl_version(std::string &glsl) {
     int glsl_version = getGLSLVersion(glsl.c_str());
     if (glsl_version == -1) {
         glsl_version = 140;
         glsl.insert(0, "#version 140\n");
     }
-    // LOGD("GLSL version: %d",glsl_version)
     return glsl_version;
 }
 
-std::vector<unsigned int> glsl_to_spirv(GLenum shader_type, int glsl_version, const char* const* shader_src,
-                                        int& errc) {
+
+std::vector<unsigned int>
+glsl_to_spirv(GLenum shader_type, int glsl_version, const char *const *shader_src,
+              int &errc) {
     EShLanguage shader_language;
     switch (shader_type) {
-    case GL_VERTEX_SHADER:
-        shader_language = EShLanguage::EShLangVertex;
-        break;
-    case GL_FRAGMENT_SHADER:
-        shader_language = EShLanguage::EShLangFragment;
-        break;
-    case GL_COMPUTE_SHADER:
-        shader_language = EShLanguage::EShLangCompute;
-        break;
-    case GL_TESS_CONTROL_SHADER:
-        shader_language = EShLanguage::EShLangTessControl;
-        break;
-    case GL_TESS_EVALUATION_SHADER:
-        shader_language = EShLanguage::EShLangTessEvaluation;
-        break;
-    case GL_GEOMETRY_SHADER:
-        shader_language = EShLanguage::EShLangGeometry;
-        break;
-    default:
-        // LOGD("GLSL type not supported!")
-        errc = -1;
-        return {};
+        case GL_VERTEX_SHADER:
+            shader_language = EShLanguage::EShLangVertex;
+            break;
+        case GL_FRAGMENT_SHADER:
+            shader_language = EShLanguage::EShLangFragment;
+            break;
+        case GL_COMPUTE_SHADER:
+            shader_language = EShLanguage::EShLangCompute;
+            break;
+        case GL_TESS_CONTROL_SHADER:
+            shader_language = EShLanguage::EShLangTessControl;
+            break;
+        case GL_TESS_EVALUATION_SHADER:
+            shader_language = EShLanguage::EShLangTessEvaluation;
+            break;
+        case GL_GEOMETRY_SHADER:
+            shader_language = EShLanguage::EShLangGeometry;
+            break;
+        default:
+            errc = -1;
+            return {};
     }
 
     glslang::TShader shader(shader_language);
@@ -798,9 +1046,9 @@ std::vector<unsigned int> glsl_to_spirv(GLenum shader_type, int glsl_version, co
     shader.setAutoMapLocations(true);
     shader.setAutoMapBindings(true);
 
-    TBuiltInResource TBuiltInResource_resources = InitResources();
+    const TBuiltInResource &resources = GetCachedResources();
 
-    if (!shader.parse(&TBuiltInResource_resources, glsl_version, true, EShMsgDefault)) {
+    if (!shader.parse(&resources, glsl_version, true, EShMsgDefault)) {
         DBG(SHUT_LOGD("glslang: GLSL Compiling ERROR: \n%s", shader.getInfoLog());)
         errc = -1;
         return {};
@@ -816,6 +1064,7 @@ std::vector<unsigned int> glsl_to_spirv(GLenum shader_type, int glsl_version, co
         return {};
     }
     DBG(SHUT_LOGD("GLSL Linked.");)
+
     std::vector<unsigned int> spirv_code;
     glslang::SpvOptions spvOptions;
     spvOptions.disableOptimizer = false;
@@ -827,66 +1076,128 @@ std::vector<unsigned int> glsl_to_spirv(GLenum shader_type, int glsl_version, co
     return spirv_code;
 }
 
-std::string spirv_to_essl(std::vector<uint32_t> spirv, unsigned int essl_version, int& errc) {
-    spvtools::Optimizer optimizer(SPV_ENV_UNIVERSAL_1_5);
-    optimizer.RegisterLegalizationPasses();
-    optimizer.RegisterPerformancePasses(false);
+
+std::string
+spirv_to_essl(const std::vector<uint32_t> &spirv, unsigned int essl_version, int &errc) {
+
+    thread_local spvtools::Optimizer optimizer(SPV_ENV_UNIVERSAL_1_5);
+    thread_local bool optimizer_initialized = false;
+
+    if (!optimizer_initialized) {
+        optimizer.RegisterLegalizationPasses();
+        optimizer.RegisterPerformancePasses(false);
+        optimizer_initialized = true;
+    }
+
     std::vector<uint32_t> optimized;
     bool ok = optimizer.Run(spirv.data(), spirv.size(), &optimized);
     if (!ok) {
         errc = -1;
         return "";
     }
-    spirv = std::move(optimized);
+
     spvc_context context = nullptr;
     spvc_parsed_ir ir = nullptr;
     spvc_compiler compiler_glsl = nullptr;
     spvc_compiler_options options = nullptr;
     spvc_resources resources = nullptr;
-    const char* result = nullptr;
+    const char *result = nullptr;
 
-    const SpvId* p_spirv = spirv.data();
-    size_t word_count = spirv.size();
 
-    DBG(SHUT_LOGD("spirv_code.size(): %d", spirv.size()))
-    spvc_context_create(&context);
-    spvc_context_parse_spirv(context, p_spirv, word_count, &ir);
-    spvc_context_create_compiler(context, SPVC_BACKEND_GLSL, ir, SPVC_CAPTURE_MODE_TAKE_OWNERSHIP, &compiler_glsl);
-    spvc_compiler_create_shader_resources(compiler_glsl, &resources);
-    //    spvc_resources_get_resource_list_for_type(resources, SPVC_RESOURCE_TYPE_UNIFORM_BUFFER, &list, &count);
-    spvc_compiler_create_compiler_options(compiler_glsl, &options);
-    spvc_compiler_options_set_uint(options, SPVC_COMPILER_OPTION_GLSL_VERSION,
-                                   essl_version >= 300 ? essl_version : 300);
-    spvc_compiler_options_set_bool(options, SPVC_COMPILER_OPTION_GLSL_ES, SPVC_TRUE);
-    spvc_compiler_install_compiler_options(compiler_glsl, options);
-    spvc_compiler_compile(compiler_glsl, &result);
+    spvc_result spvc_err = spvc_context_create(&context);
+    if (spvc_err != SPVC_SUCCESS || !context) {
+        DBG(SHUT_LOGD("Error: spvc_context_create failed: %d", spvc_err));
+        errc = -1;
+        return "";
+    }
 
-    if (!result) {
-        DBG(SHUT_LOGD("Error: unexpected error in spirv-cross."));
+    spvc_err = spvc_context_parse_spirv(context, optimized.data(), optimized.size(), &ir);
+    if (spvc_err != SPVC_SUCCESS || !ir) {
+        DBG(SHUT_LOGD("Error: spvc_context_parse_spirv failed: %d", spvc_err));
+        errc = -1;
+        spvc_context_destroy(context);
+        return "";
+    }
+
+    spvc_err = spvc_context_create_compiler(context, SPVC_BACKEND_GLSL, ir,
+                                            SPVC_CAPTURE_MODE_TAKE_OWNERSHIP, &compiler_glsl);
+    if (spvc_err != SPVC_SUCCESS || !compiler_glsl) {
+        DBG(SHUT_LOGD("Error: spvc_context_create_compiler failed: %d", spvc_err));
+        errc = -1;
+        spvc_context_destroy(context);
+        return "";
+    }
+
+    spvc_err = spvc_compiler_create_shader_resources(compiler_glsl, &resources);
+    if (spvc_err != SPVC_SUCCESS) {
+        DBG(SHUT_LOGD("Error: spvc_compiler_create_shader_resources failed: %d", spvc_err));
+        errc = -1;
+        spvc_context_destroy(context);
+        return "";
+    }
+
+    spvc_err = spvc_compiler_create_compiler_options(compiler_glsl, &options);
+    if (spvc_err != SPVC_SUCCESS || !options) {
+        DBG(SHUT_LOGD("Error: spvc_compiler_create_compiler_options failed: %d", spvc_err));
+        errc = -1;
+        spvc_context_destroy(context);
+        return "";
+    }
+
+    spvc_err = spvc_compiler_options_set_uint(options, SPVC_COMPILER_OPTION_GLSL_VERSION,
+                                              essl_version >= 300 ? essl_version : 300);
+    if (spvc_err != SPVC_SUCCESS) {
+        DBG(SHUT_LOGD("Error: spvc_compiler_options_set_uint failed: %d", spvc_err));
+        errc = -1;
+        spvc_context_destroy(context);
+        return "";
+    }
+
+    spvc_err = spvc_compiler_options_set_bool(options, SPVC_COMPILER_OPTION_GLSL_ES, SPVC_TRUE);
+    if (spvc_err != SPVC_SUCCESS) {
+        DBG(SHUT_LOGD("Error: spvc_compiler_options_set_bool failed: %d", spvc_err));
+        errc = -1;
+        spvc_context_destroy(context);
+        return "";
+    }
+
+    spvc_err = spvc_compiler_install_compiler_options(compiler_glsl, options);
+    if (spvc_err != SPVC_SUCCESS) {
+        DBG(SHUT_LOGD("Error: spvc_compiler_install_compiler_options failed: %d", spvc_err));
+        errc = -1;
+        spvc_context_destroy(context);
+        return "";
+    }
+
+    spvc_err = spvc_compiler_compile(compiler_glsl, &result);
+    if (spvc_err != SPVC_SUCCESS || !result) {
+        DBG(SHUT_LOGD("Error: spvc_compiler_compile failed: %d", spvc_err));
         errc = -1;
         spvc_context_destroy(context);
         return "";
     }
 
     std::string essl = result;
-
     spvc_context_destroy(context);
     errc = 0;
     return essl;
 }
 
-static bool glslang_inited = false;
-std::string GLSLtoGLSLES_2(const char* glsl_code, GLenum glsl_type, unsigned int essl_version, int& return_code) {
+
+static std::once_flag glslang_init_flag;
+
+std::string GLSLtoGLSLES_2(const char *glsl_code, GLenum glsl_type, unsigned int essl_version,
+                           int &return_code) {
+    std::call_once(glslang_init_flag, []() {
+        glslang::InitializeProcess();
+    });
+
     bool atomicCounterEmulated = false;
     std::string correct_glsl_str = preprocess_glsl(glsl_code, glsl_type, &atomicCounterEmulated);
     DBG(SHUT_LOGD("Firstly converted GLSL:\n%s", correct_glsl_str.c_str()))
     int glsl_version = get_or_add_glsl_version(correct_glsl_str);
 
-    if (!glslang_inited) {
-        glslang::InitializeProcess();
-        glslang_inited = true;
-    }
-    const char* s[] = {correct_glsl_str.c_str()};
+    const char *s[] = {correct_glsl_str.c_str()};
     int errc = 0;
     std::vector<unsigned int> spirv_code = glsl_to_spirv(glsl_type, glsl_version, s, errc);
     if (errc != 0) {
@@ -900,8 +1211,6 @@ std::string GLSLtoGLSLES_2(const char* glsl_code, GLenum glsl_type, unsigned int
         return_code = -2;
         return "";
     }
-
-    // Post-processing ESSL
 
     if (glsl_type != GL_COMPUTE_SHADER) {
         essl = removeLayoutBinding(essl);
@@ -917,15 +1226,16 @@ std::string GLSLtoGLSLES_2(const char* glsl_code, GLenum glsl_type, unsigned int
     return essl;
 }
 
-static bool starts_with(const std::string& s, const char* p) {
+static bool starts_with(const std::string &s, const char *p) {
     return s.compare(0, strlen(p), p) == 0;
 }
 
-static bool is_word_char(char c){
-    return std::isalnum((unsigned char)c) || c == '_';
+static bool is_word_char(char c) {
+    return std::isalnum((unsigned char) c) || c == '_';
 }
 
-static std::string replace_all_word(const std::string& s,const std::string& from, const std::string& to){
+static std::string
+replace_all_word(const std::string &s, const std::string &from, const std::string &to) {
     if (from.empty()) return s;
 
     std::string out;
@@ -933,12 +1243,10 @@ static std::string replace_all_word(const std::string& s,const std::string& from
 
     size_t i = 0;
 
-    while (i < s.size())
-    {
+    while (i < s.size()) {
         size_t pos = s.find(from, i);
 
-        if (pos == std::string::npos)
-        {
+        if (pos == std::string::npos) {
             out.append(s, i, std::string::npos);
             break;
         }
@@ -946,15 +1254,11 @@ static std::string replace_all_word(const std::string& s,const std::string& from
         out.append(s, i, pos - i);
 
         bool left_ok = (pos == 0) || !is_word_char(s[pos - 1]);
-        bool right_ok = (pos + from.size() >= s.size()) ||
-                        !is_word_char(s[pos + from.size()]);
+        bool right_ok = (pos + from.size() >= s.size()) || !is_word_char(s[pos + from.size()]);
 
-        if (left_ok && right_ok)
-        {
+        if (left_ok && right_ok) {
             out += to;
-        }
-        else
-        {
+        } else {
             out.append(from);
         }
 
@@ -964,46 +1268,57 @@ static std::string replace_all_word(const std::string& s,const std::string& from
     return out;
 }
 
-extern bool g_nohighp;
 
-static std::string fix_precisions(const std::string& in) {
+extern std::atomic<bool> g_nohighp;
+
+
+static std::string fix_precisions(const std::string &in) {
     using namespace std;
     const string mediump_precision = "mediump";
     const string highp_precision = "highp";
-    const string precision_touse = g_nohighp ? mediump_precision : highp_precision;
-    const string input_string = replace_all_word(in, g_nohighp ? highp_precision : mediump_precision, precision_touse);
-    istringstream iss(input_string);
-    string line;
+    const string precision_touse = g_nohighp.load() ? mediump_precision : highp_precision;
+    const string input_string = replace_all_word(in, g_nohighp.load() ? highp_precision
+                                                                      : mediump_precision,
+                                                 precision_touse);
+
     string out;
-    out.reserve(input_string.size());
+    out.reserve(input_string.size() + 64);
 
-    bool has_presicion = false;
+    bool has_precision = false;
+    size_t pos = 0;
 
-    while (getline(iss, line)) {
+    while (pos < input_string.size()) {
+        size_t line_end = input_string.find('\n', pos);
+        if (line_end == std::string::npos) line_end = input_string.size();
+
+        string line = input_string.substr(pos, line_end - pos);
+
+
         size_t i = 0;
-        while (i < line.size() && isspace((unsigned char)line[i])) i++;
+        while (i < line.size() && isspace((unsigned char) line[i])) i++;
         string trimmed = line.substr(i);
 
         if (starts_with(trimmed, "precision")) {
             if (trimmed.find(precision_touse) != string::npos) {
-                if (!has_presicion) {
+                if (!has_precision) {
                     out += "precision " + precision_touse + " float;\n";
                     out += "precision " + precision_touse + " int;\n";
-                    has_presicion = true;
+                    has_precision = true;
                 }
             }
-
+            pos = line_end + 1;
             continue;
         }
 
         out += line;
         out += '\n';
+        pos = line_end + 1;
     }
 
     return out;
 }
 
-extern "C" char* sanitize_glsl(const char* inputString) {
+extern "C" char *sanitize_glsl(const char *inputString) {
     std::string in = fix_precisions(inputString);
     std::string out;
     out.reserve(in.size());
@@ -1026,7 +1341,7 @@ extern "C" char* sanitize_glsl(const char* inputString) {
             continue;
         }
 
-        if (std::isspace((unsigned char)c)) {
+        if (std::isspace((unsigned char) c)) {
             if (!prev_space && !prev_newline) {
                 out += ' ';
                 prev_space = true;
