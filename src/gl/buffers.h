@@ -231,6 +231,7 @@ typedef struct {
     glbuffer_t* read;
     glbuffer_t* write;
     glbuffer_t* uniform;
+    glbuffer_t* shader_storage;
     glbuffer_t* textureBuffer;
     glbuffer_t* indirect;
 } glvao_t;

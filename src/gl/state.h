@@ -312,6 +312,7 @@ typedef struct {
     GLuint array;
     GLuint index;
     GLuint uniform;
+    GLuint shader_storage;
     GLuint want_index;
     int used;
     GLuint copy_write;
