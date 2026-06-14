@@ -1007,6 +1007,10 @@ void realize_textures(int drawing) {
         GLenum target = map_tex_target(to_target(tgt));
         gltexture_t* tex = glstate->texture.bound[i][tgt];
 
+        if (tex == nullptr){
+            return;
+        }
+
         GLuint t = tex->glname;
         if (tgt == ENABLED_CUBE_MAP || target==ENABLED_CUBE_MAP_ARRAY || target==ENABLED_TEX3D) {
             if (drawing) {
