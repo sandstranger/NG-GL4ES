@@ -1008,7 +1008,7 @@ void realize_textures(int drawing) {
         gltexture_t* tex = glstate->texture.bound[i][tgt];
 
         if (tex == nullptr){
-            return;
+            continue;
         }
 
         GLuint t = tex->glname;
