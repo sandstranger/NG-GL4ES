@@ -1066,6 +1066,12 @@ void APIENTRY_GL4ES gl4es_glRenderbufferStorage(GLenum target, GLenum internalfo
         else
             internalformat = GL_RGBA8;
     }
+    else if (internalformat == GL_RGB) {
+        if (hardext.rgba8 == 0)
+            internalformat = GL_RGB565_OES;
+        else
+            internalformat = GL_RGB8;
+    }
 
     if (rend->secondarybuffer) {
         if (use_secondarybuffer) {
@@ -1107,9 +1113,105 @@ void APIENTRY_GL4ES gl4es_glRenderbufferStorage(GLenum target, GLenum internalfo
     DBG(CheckGLError(1);)
 }
 
+typedef void (*glRenderbufferStorageMultisample_PTR) (GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);
 void APIENTRY_GL4ES gl4es_glRenderbufferStorageMultisample(GLenum target, GLsizei samples, GLenum internalformat,
                                                            GLsizei width, GLsizei height) { // STUB
-    gl4es_glRenderbufferStorage(target, internalformat, width, height);
+    DBG(SHUT_LOGD("glRenderbufferStorageMultisample(%s, %s, %i, %i, %i)\n", PrintEnum(target), PrintEnum(internalformat), samples, width,
+                  height);)
+    LOAD_GLES3(glRenderbufferStorageMultisample);
+    LOAD_GLES2_OR_OES(glGenRenderbuffers);
+    LOAD_GLES2_OR_OES(glBindRenderbuffer);
+
+    glrenderbuffer_t* rend = glstate->fbo.current_rb;
+    if (!rend->renderbuffer) {
+        errorShim(GL_INVALID_OPERATION);
+        return;
+    }
+
+    errorGL();
+    width = (hardext.npot > 0 && !globals4es.potframebuffer) ? width : npot(width);
+    height = (hardext.npot > 0 && !globals4es.potframebuffer) ? height : npot(height);
+    int use_secondarybuffer = 0;
+    int use_secondarytexture = 0;
+    GLenum format = internalformat;
+
+    // in that case, create first a STENCIL one then a DEPTH one....
+    if (internalformat == GL_DEPTH_STENCIL) {
+        if (hardext.depthstencil) {
+            internalformat = GL_DEPTH24_STENCIL8;
+        } else {
+            internalformat = GL_DEPTH_COMPONENT32F;
+            // create a stencil buffer if needed
+            if (!rend->secondarybuffer) {
+                gles_glGenRenderbuffers(1, &rend->secondarybuffer);
+            }
+        }
+        use_secondarybuffer = 1;
+    } else if (internalformat == GL_DEPTH_COMPONENT || internalformat == GL_DEPTH_COMPONENT16 ||
+               internalformat == GL_DEPTH_COMPONENT24 ||
+               internalformat == GL_DEPTH_COMPONENT32) // Not much is supported on GLES...
+        internalformat = GL_DEPTH_COMPONENT32F;
+    else if (internalformat == GL_RGB8 && hardext.rgba8 == 0)
+        internalformat = GL_RGB565_OES;
+    else if (internalformat == GL_RGBA8 && hardext.rgba8 == 0)
+        internalformat = GL_RGBA4_OES;
+    else if (internalformat == GL_RGB5)
+        internalformat = GL_RGB565_OES;
+    else if (internalformat == GL_R3_G3_B2)
+        internalformat = GL_RGB565_OES;
+    else if (internalformat == GL_RGB4)
+        internalformat = GL_RGBA4_OES;
+    else if (internalformat == GL_RGBA) {
+        if (hardext.rgba8 == 0)
+            internalformat = GL_RGBA4_OES;
+        else
+            internalformat = GL_RGBA8;
+    }
+    else if (internalformat == GL_RGB) {
+        if (hardext.rgba8 == 0)
+            internalformat = GL_RGB565_OES;
+        else
+            internalformat = GL_RGB8;
+    }
+
+    if (rend->secondarybuffer) {
+        if (use_secondarybuffer) {
+            GLuint current_rb = glstate->fbo.current_rb->renderbuffer;
+            gles_glBindRenderbuffer(GL_RENDERBUFFER, rend->secondarybuffer);
+            gles_glRenderbufferStorageMultisample(target, samples, GL_STENCIL_INDEX8, width, height);
+            gles_glBindRenderbuffer(GL_RENDERBUFFER, current_rb);
+        } else {
+            LOAD_GLES2_OR_OES(glDeleteRenderbuffers);
+            gles_glDeleteRenderbuffers(1, &rend->secondarybuffer);
+            rend->secondarybuffer = 0;
+        }
+    }
+
+    if (rend->secondarytexture) {
+        // should check if texture is still needed?
+        gltexture_t* tex = gl4es_getTexture(GL_TEXTURE_2D, rend->secondarytexture);
+        LOAD_GLES(glActiveTexture);
+        LOAD_GLES(glBindTexture);
+        LOAD_GLES(glTexImage2D);
+        int oldactive = glstate->texture.active;
+        if (oldactive) gles_glActiveTexture(GL_TEXTURE0);
+        gltexture_t* bound = glstate->texture.bound[0 /*glstate->texture.active*/][ENABLED_TEX2D];
+        GLuint oldtex = bound->glname;
+        if (oldtex != rend->secondarytexture) gles_glBindTexture(GL_TEXTURE_2D, rend->secondarytexture);
+        tex->nwidth = tex->width = width;
+        tex->nheight = tex->height = height;
+        gles_glTexImage2D(GL_TEXTURE_2D, 0, tex->format, tex->nwidth, tex->nheight, 0, tex->format, tex->type, NULL);
+        if (oldtex != tex->glname) gles_glBindTexture(GL_TEXTURE_2D, oldtex);
+        if (oldactive) gles_glActiveTexture(GL_TEXTURE0 + oldactive);
+    }
+
+    rend->width = width;
+    rend->height = height;
+    rend->format = format;
+    rend->actual = internalformat;
+
+    gles_glRenderbufferStorageMultisample(target, samples, internalformat, width, height);
+    DBG(CheckGLError(1);)
 }
 
 void APIENTRY_GL4ES gl4es_glBindRenderbuffer(GLenum target, GLuint renderbuffer) {
@@ -1575,7 +1677,7 @@ void APIENTRY_GL4ES gl4es_glBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX
     // #endif
 }
 
-VISIBLE void glReadBuffer(GLenum src) {
+void APIENTRY_GL4ES gl4es_glReadBuffer(GLenum src) {
     DBG(SHUT_LOGD("glReadBuffer, src:%s", PrintEnum(src));)
     LOAD_GLES3(glReadBuffer);
     gles_glReadBuffer(src);
@@ -2109,6 +2211,7 @@ AliasExport(void, glRenderbufferStorageMultisample, ,
 
 // DrawBuffers
 AliasExport(void, glDrawBuffer, , (GLenum bufs));
+AliasExport(void, glReadBuffer, , (GLenum src));
 AliasExport(void, glDrawBuffer, ARB, (GLenum bufs));
 AliasExport(void, glDrawBuffers, , (GLsizei n, const GLenum* bufs));
 AliasExport(void, glDrawBuffers, ARB, (GLsizei n, const GLenum* bufs));

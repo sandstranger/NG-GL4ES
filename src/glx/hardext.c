@@ -464,6 +464,19 @@ void GetHardwareExtensions(int notest) {
         if (gles_glGetError() != GL_NO_ERROR) hardext.aniso = 0;
         if (hardext.aniso) SHUT_LOGD("Max Anisotropic filtering: %d", hardext.aniso);
     }
+
+    GLint maxFragmentSSBOs;
+    GLint maxVertexSSBOs;
+    GLint maxComputeSSBOs;
+    gles_glGetIntegerv(GL_MAX_FRAGMENT_SHADER_STORAGE_BLOCKS, &maxFragmentSSBOs);
+    gles_glGetIntegerv(GL_MAX_VERTEX_SHADER_STORAGE_BLOCKS, &maxVertexSSBOs);
+    gles_glGetIntegerv(GL_MAX_COMPUTE_SHADER_STORAGE_BLOCKS, &maxComputeSSBOs);
+    SHUT_LOGD("Max SSBO buffers %d %d %d", maxFragmentSSBOs, maxVertexSSBOs, maxComputeSSBOs);
+
+    GLint maxSamples;
+    gles_glGetIntegerv(GL_MAX_SAMPLES, &maxSamples);
+    SHUT_LOGD("Max MSAA samples %d", maxSamples);
+
     // get GLES driver signatures...
     const char* vendor = (const char*)gles_glGetString(GL_VENDOR);
     SHUT_LOGD("Hardware vendor is %s", vendor);

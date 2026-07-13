@@ -179,6 +179,37 @@ extern "C"
                    "GL_ARB_vertex_attrib_binding "
                    //                "GL_EXT_blend_logic_op "
             );
+
+            if (globals4es.dxt != 2)
+                strcat(extensions, "GL_EXT_texture_compression_s3tc "
+                    "GL_OES_texture_compression_S3TC "
+                    "GL_EXT_texture_compression_dxt1 "
+                    "GL_EXT_texture_compression_dxt3 "
+                    "GL_EXT_texture_compression_dxt5 ");
+
+            if(hardext.clipcontrol) {
+                strcat(extensions, "GL_EXT_clip_control ");
+                strcat(extensions, "GL_ARB_clip_control ");
+            }
+
+            if(hardext.depthclamp) {
+                strcat(extensions, "GL_EXT_depth_clamp ");
+                strcat(extensions, "GL_ARB_depth_clamp ");
+            }
+
+            if(hardext.timerquery) {
+                strcat(extensions, "GL_EXT_disjoint_timer_query ");
+            }
+
+            // es3 core stuff
+            strcat(extensions, "GL_EXT_gpu_shader4 ");
+            strcat(extensions, "GL_EXT_texture3D ");
+            strcat(extensions, "GL_EXT_texture_rg ");
+            strcat(extensions, "GL_EXT_texture_array ");
+            strcat(extensions, "GL_ARB_color_buffer_float ");
+            //strcat(extensions, "GL_ARB_depth_buffer_float ");
+            strcat(extensions, "GL_ARB_shadow ");
+
             if (!globals4es.notexrect) strcat(extensions, "GL_ARB_texture_rectangle ");
             if (globals4es.vabgra) strcat(extensions, "GL_ARB_vertex_array_bgra ");
             if (globals4es.npot >= 1) strcat(extensions, "GL_APPLE_texture_2D_limited_npot ");
@@ -247,34 +278,6 @@ extern "C"
             if (hardext.prgbin_n) {
                 strcat(extensions, "GL_ARB_get_program_binary ");
             }
-
-            if (globals4es.dxt != 2)
-                strcat(extensions, "GL_EXT_texture_compression_s3tc "
-                    "GL_OES_texture_compression_S3TC "
-                    "GL_EXT_texture_compression_dxt1 "
-                    "GL_EXT_texture_compression_dxt3 "
-                    "GL_EXT_texture_compression_dxt5 ");
-
-            if(hardext.clipcontrol) {
-                strcat(extensions, "GL_EXT_clip_control ");
-                strcat(extensions, "GL_ARB_clip_control ");
-            }
-
-            if(hardext.depthclamp) {
-                strcat(extensions, "GL_EXT_depth_clamp ");
-                strcat(extensions, "GL_ARB_depth_clamp ");
-            }
-
-            if(hardext.timerquery) {
-                strcat(extensions, "GL_EXT_disjoint_timer_query ");
-            }
-
-            // es3 core stuff
-            strcat(extensions, "GL_EXT_texture3D ");
-            strcat(extensions, "GL_EXT_texture_rg ");
-            strcat(extensions, "GL_ARB_color_buffer_float ");
-        //    strcat(extensions, "GL_ARB_depth_buffer_float ");
-            strcat(extensions, "GL_ARB_shadow ");
 
             char* p = extensions;
             glstate->num_extensions = 0;

@@ -146,10 +146,10 @@ static void proxy_glEnable(GLenum cap, bool enable, void (APIENTRY_GLES *next)(G
         proxy_GO(GL_PROGRAM_POINT_SIZE, point_size);
 
         // Smooth and multisample (todo: do somthing with fpe?)
-        proxy_GOFPE(GL_MULTISAMPLE, multisample, );
-        proxy_GOFPE(GL_SAMPLE_COVERAGE, sample_coverage, );
-        proxy_GOFPE(GL_SAMPLE_ALPHA_TO_COVERAGE, sample_alpha_to_coverage, );
-        proxy_GOFPE(GL_SAMPLE_ALPHA_TO_ONE, sample_alpha_to_one, );
+        proxy_GO(GL_MULTISAMPLE, multisample);
+        proxy_GO(GL_SAMPLE_COVERAGE, sample_coverage);
+        proxy_GO(GL_SAMPLE_ALPHA_TO_COVERAGE, sample_alpha_to_coverage);
+        proxy_GO(GL_SAMPLE_ALPHA_TO_ONE, sample_alpha_to_one);
         proxy_GOFPE(GL_POINT_SMOOTH, point_smooth, );
         proxy_GOFPE(GL_LINE_SMOOTH, line_smooth, );
 
