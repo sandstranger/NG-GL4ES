@@ -354,8 +354,7 @@ char* LegacyTo3XX(struct shader_s* shader_source) {
         source = InplaceReplaceSimple(source, &sourceLength, "#version 140", "#version 460\n");
         source = InplaceReplaceSimple(source, &sourceLength, "#version 150", "#version 460\n");
 
-        source = InplaceReplaceSimple(source, &sourceLength, "#extension GL_ARB_uniform_buffer_object : require", "");
-        source = InplaceReplaceSimple(source, &sourceLength, "#extension GL_EXT_gpu_shader4: require", "");
+        source = InplaceReplaceSimple(source, &sourceLength, "#extension", "//#extension");
 
         source = InplaceReplaceSimple(source, &sourceLength, "#version 460",
 "#version 460\n\
@@ -368,6 +367,7 @@ precision highp int;\n\
 #define shadow2DProj textureProj\n\
 #define texture2DLod textureLod\n\
 #define textureSize2D textureSize\n\
+#define texture2DGrad textureGrad\n\
 #define sample sample2\n\
 ");
 //        source = InplaceReplaceSimple(source, &sourceLength, "textureSize2D", "textureSize");
@@ -452,8 +452,6 @@ char* SimpleShaderConv(struct shader_s* shader_source) {
         source = InplaceReplaceSimple(source, &sourceLength, "textureSize2D(", "vgpu_textureSize2D(");
         source = InplaceReplaceSimple(source, &sourceLength, "shadow2D(", "vgpu_shadow2D(");
         source = InplaceReplaceSimple(source, &sourceLength, "shadow2DProj(", "vgpu_shadow2DProj(");
-        source = InplaceReplaceSimple(source, &sourceLength, "#extension GL_ARB_uniform_buffer_object : require", "");
-        source = InplaceReplaceSimple(source, &sourceLength, "#extension GL_EXT_gpu_shader4: require", "");
         source = InplaceReplaceSimple(source, &sourceLength, "uniform LightBufferBinding", "layout (std140) uniform LightBufferBinding");
         source = InplaceReplaceSimple(source, &sourceLength, "uniform bool useAdvancedShader = false;", "uniform bool useAdvancedShader;");
         source = InplaceReplaceSimple(source, &sourceLength, "uniform vec2 scaling = vec2(1.0, 1.0);", "uniform vec2 scaling;");
@@ -461,6 +459,7 @@ char* SimpleShaderConv(struct shader_s* shader_source) {
         source = InplaceReplaceSimple(source, &sourceLength, "uniform bool useDiffuseMapForShadowAlpha = true;", "uniform bool useDiffuseMapForShadowAlpha;");
     }
 
+    source = InplaceReplaceSimple(source, &sourceLength, "#extension", "//#extension");
 
     source = InplaceReplaceSimple(source, &sourceLength, "#version 100", "#VERSION\n");
     source = InplaceReplaceSimple(source, &sourceLength, "#version 110", "#VERSION\n");
@@ -491,6 +490,7 @@ precision lowp sampler2DShadow;\n\
 #define texture2DLod textureLod\n\
 #define shadow2DProj textureProj\n\
 #define textureSize2D textureSize\n\
+#define texture2DGrad textureGrad\n\
 float vgpu_pow(float x, float y) { return pow(abs(x), y); }\n\
 float vgpu_pow(float x, int y) { return pow(abs(x), float(y)); }\n\
 float vgpu_pow(int x, float y) { return pow(abs(float(x)), y); }\n\
