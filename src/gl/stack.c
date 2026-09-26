@@ -4,6 +4,7 @@
 
 #include "../glx/hardext.h"
 #include "wrap/gl4es.h"
+#include "line.h"
 #include "matrix.h"
 #include "debug.h"
 #include "logs.h"
@@ -186,7 +187,9 @@ void APIENTRY_GL4ES gl4es_glPushAttrib(GLbitfield mask) {
 
     if (mask & GL_LINE_BIT) {
         cur->line_smooth = gl4es_glIsEnabled(GL_LINE_SMOOTH);
-        // TODO: stipple stuff here
+        cur->line_stipple = gl4es_glIsEnabled(GL_LINE_STIPPLE);
+        cur->line_stipple_factor = glstate->linestipple.factor;
+        cur->line_stipple_pattern = glstate->linestipple.pattern;
         gl4es_glGetFloatv(GL_LINE_WIDTH, &cur->line_width);
     }
 
@@ -522,7 +525,12 @@ DBG(SHUT_LOGD("glPopAttrib()\n");)
 
     if (cur->mask & GL_LINE_BIT) {
         enable_disable(GL_LINE_SMOOTH, cur->line_smooth);
-        // TODO: stipple stuff here
+        enable_disable(GL_LINE_STIPPLE, cur->line_stipple);
+        // only on a change: the first gl4es_glLineStipple call creates the
+        // stipple emulation texture, even for the default factor/pattern
+        if (cur->line_stipple_factor != glstate->linestipple.factor
+         || cur->line_stipple_pattern != glstate->linestipple.pattern)
+            gl4es_glLineStipple(cur->line_stipple_factor, cur->line_stipple_pattern);
         gl4es_glLineWidth(cur->line_width);
     }
 
