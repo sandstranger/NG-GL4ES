@@ -134,8 +134,11 @@ void APIENTRY_GL4ES fpe_ReleventState_DefaultVertex(fpe_state_t* dest, fpe_state
         dest->fogsource = 0;
         dest->fogdist = 0;
     }
-    if (!dest->point) dest->pointsprite = 0;
-    if (!dest->pointsprite) {
+    if(!dest->point) {
+        dest->pointsprite = 0;
+        dest->point_smooth = 0;
+    }
+    if(!dest->pointsprite) {
         dest->pointsprite_upper = 0;
         dest->pointsprite_coord = 0;
     }
@@ -231,8 +234,11 @@ void APIENTRY_GL4ES fpe_ReleventState(fpe_state_t* dest, fpe_state_t* src, int f
         dest->fogsource = 0;
         dest->fogdist = 0;
     }
-    if (!fixed || !dest->point) dest->pointsprite = 0;
-    if (!fixed || !dest->pointsprite) {
+    if(!fixed || !dest->point) {
+        dest->pointsprite = 0;
+        dest->point_smooth = 0;
+    }
+    if(!fixed || !dest->pointsprite) {
         dest->pointsprite_upper = 0;
         dest->pointsprite_coord = 0;
     }
