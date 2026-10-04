@@ -756,7 +756,7 @@ const char* const* fpe_VertexShader(shaderconv_need_t* need, fpe_state_t* state)
     // point sprite special case
     if (point) {
         if (!need_vertex) need_vertex = 1;
-        ShadAppend("float ps_d = length(vertex);\n");
+        ShadAppend("highp float ps_d = length(vertex);\n");
         sprintf(buff, "gl_PointSize = clamp(gl_Point.size*inversesqrt(gl_Point.distanceConstantAttenuation + "
                       "ps_d*(gl_Point.distanceLinearAttenuation + ps_d*gl_Point.distanceQuadraticAttenuation)), "
                       "gl_Point.sizeMin, gl_Point.sizeMax);\n");
@@ -765,7 +765,7 @@ const char* const* fpe_VertexShader(shaderconv_need_t* need, fpe_state_t* state)
     // insert normal, vertex and eye/obj planes if needed
     if (need_vertex) {
         buff[0] = '\0';
-        if (need_vertex == 1) strcat(buff, "vec4 ");
+        if (need_vertex == 1) strcat(buff, "highp vec4 ");
         strcat(buff, "vertex = gl_ModelViewMatrix * gl_Vertex;\n");
         shad = InplaceInsert(GetLine(shad, normal_line + headers), buff, shad, &shad_cap);
         normal_line += CountLine(buff);
